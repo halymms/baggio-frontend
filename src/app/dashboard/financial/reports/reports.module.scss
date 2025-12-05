@@ -1,0 +1,115 @@
+.reportsPage {
+  .backLink {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 8px;
+    background: #ff6b35;
+    color: #fff;
+    width: fit-content;
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+ .reportsHeader {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 24px;
+
+    .reportsTitle{
+        display: flex;
+        flex-direction: column;
+
+        .reportsTitleText {
+            font-size: 30px;
+            color: #1e3a5f;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .reportsDate {
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1;
+            color: #1e3a5f;
+            margin: 0;
+            padding: 0;
+        }
+    }
+
+    .reportsSection {
+        display: flex;
+        align-items: end;
+
+        .reportsSectionLabel {
+            font-size: 14px;
+            font-weight: 600;
+            background: #ff6b35;
+            padding: 16px 8px;
+            border-radius: 14px;
+            border: 1px solid #ff6b35;
+            color: #fff;
+        }
+    }
+ }   
+ .reportsTableContainer {
+    border-radius: 14px;
+    display: flex;
+    overflow: hidden;
+
+    .reportsTable {
+        width: 100%;
+        border-radius: 14px;
+        border: 1px solid rgba(0, 0, 0, .1);
+        border-spacing: 0;
+        background: #fff;
+        font-size: 14px;
+        line-height: 1.42857;
+
+        .reportsTableHeader {
+            border-radius: 14px;
+            font-size: 0.875rem;
+            font-weight: 500;
+
+            .reportsTableRow {
+                padding-inline: 24px;
+                padding-top: 0;
+                height: 40px;
+                background: #f3f3f5;
+                border-radius: 14px;
+
+                .reportsTableCell {
+                    font-weight: 500;
+                    color: #1e3a5f;
+                }
+            }
+        }
+    }
+
+    .reportsTableBody {
+        .reportsTableRow {
+             .reportsTableCell {
+                padding: 12px 8px;
+                border-bottom: 1px solid rgba(0, 0, 0, .1);
+
+                .observacaoCell {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-around;
+                    width: 100%;
+                }
+
+                .editObsButton {
+                    border: 0;
+                    cursor: pointer;
+                    background-color: transparent;
+                }
+             }
+        }
+    }
+ }
+}

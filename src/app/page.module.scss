@@ -1,0 +1,128 @@
+.landingMain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 220px);
+  background: #f5f5f5;
+}
+
+.landingContent {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px;
+  text-align: center;
+}
+
+.welcomeSection {
+  margin-bottom: 48px;
+}
+
+.logoCircle {
+  width: 96px;
+  height: 96px;
+  background: linear-gradient(135deg, #1e3a5f 0%, #ff6b35 100%);
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 32px auto;
+}
+
+.logoIcon {
+  width: 48px;
+  height: 48px;
+  color: #fff;
+}
+
+.landingTitle {
+  font-size: 2.3rem;
+  color: #1e3a5f;
+  margin-bottom: 24px;
+}
+
+.landingDescription {
+  color: #4b5563;
+  font-size: 1.15rem;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.modulesBox {
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 32px;
+}
+
+.modulesTitle {
+  color: #1e3a5f;
+  margin-bottom: 16px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.modulesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+@media (min-width: 768px) {
+  .modulesGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.loginBtn {
+  background: #ff6b35;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 600;
+  padding: 16px 48px;
+  border-radius: 16px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: background 0.2s, color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  text-decoration: none;
+}
+
+.loginBtn:hover {
+  background: #e55a2b;
+  color: #fff;
+}
+
+.arrowIcon {
+  margin-left: 8px;
+  width: 20px;
+  height: 20px;
+}
+.landingContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(120deg, #2563eb 0%, #60a5fa 100%);
+}
+
+.title {
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.description {
+  color: #e0e7ff;
+  font-size: 1.2rem;
+  margin-bottom: 32px;
+  text-align: center;
+}

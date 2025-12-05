@@ -1,0 +1,61 @@
+.header {
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.headerContent {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logoRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoImg {
+  height: 32px;
+  width: auto;
+}
+
+.divider {
+  height: 24px;
+  width: 1px;
+  background: #d1d5db;
+}
+
+.sistemaText {
+  font-size: 1rem;
+  color: #4b5563;
+}
+
+.loginBtn {
+  background: #ff6b35;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background 0.2s;
+  text-decoration: none;
+}
+
+.loginBtn:hover {
+  background: #e55a2b;
+}
+
+.arrowIcon {
+  margin-left: 8px;
+  height: 18px;
+  width: 18px;
+}

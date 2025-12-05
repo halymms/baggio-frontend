@@ -1,0 +1,27 @@
+.homeContainer {
+  display: flex;
+  background: #fff;
+  min-height: 100vh;
+}
+
+.sideNavWrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 260px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.title {
+  color: #2563eb;
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 24px;
+}
+
+.content {
+  width: 100%;
+  padding: 24px;
+  background: #F9FAFB;
+  overflow-y: scroll;
+  height: 100vh;
+}

@@ -1,0 +1,108 @@
+
+ .sidenav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding-bottom: 16px;
+}
+
+ .logoLink {
+  margin-bottom: 8px;
+  display: flex;
+  height: 80px;
+  align-items: center;
+  justify-content: initial;
+  background: #1e3a5f;
+  padding: 16px 33px;
+}
+
+ .logoWrap {
+  width: 128px;
+  color: #fff;
+}
+
+ .logoPlaceholder {
+  width: 100%;
+  height: 40px;
+  background: #e0e0e0;
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+ .navContent {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px;
+}
+
+ .spacer {
+  display: none;
+  height: auto;
+  width: 100%;
+  flex-grow: 1;
+  border-radius: 8px;
+  background: #f3f4f6;
+}
+
+ .signOutBtn {
+  display: flex;
+  height: 48px;
+  width: 100%;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: initial;
+  gap: 8px;
+  background: none;
+  color: #1e3a5f;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  border: none;
+}
+
+.signOutText {
+  font-size: 0.825rem;
+  font-weight: 500;
+}
+
+ .signOutBtn:hover,
+ .active {
+  background: #ff6b35;
+  color: #fff;
+}
+
+ .icon {
+  width: 24px;
+}
+
+ .navLink {
+  display: flex;
+  height: 48px;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: initial;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.825rem;
+  font-weight: 500;
+  text-decoration: none;
+  color: #1e3a5f;
+  transition: background 0.2s, color 0.2s;
+}
+
+ .navLink:hover {
+  background: #ff6b35;
+  color: #fff;
+}
+
+ .active {
+  background: #ff6b35;
+  color: #fff;
+}

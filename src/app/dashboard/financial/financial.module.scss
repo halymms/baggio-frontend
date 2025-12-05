@@ -1,0 +1,439 @@
+.financialPageContainer {
+    .financialPageHeader {
+        margin-bottom: 24px;
+
+        .financialPageTitle {
+            font-size: 30px;
+            font-weight: 700;
+            color: #1e3a5f;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .financialPageSubtitle {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #1e3a5f;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+    }
+
+    .financialPageActionContent {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px solid #0000001a;
+        margin-bottom: 24px;
+
+        .financialPageFiltersContainer {
+            display: flex;
+            gap: 16px;
+
+            .financialPageSelectContent {
+                padding: 8px;
+                background: #f3f3f5;
+                border-radius: 8px;
+                cursor: pointer;
+
+                .financialPageSelect {
+                    font-size: 14px;
+                    font-family: 'Poppins ', 'Poppins Fallback';
+                    font-weight: 400;
+                    color: #1e3a5f;
+                    border: 0;
+                    background: #f3f3f5;
+                    cursor: pointer;
+
+                    &.financialPageSelectMonth,
+                    &.financialPageSelectSection {
+                        width: 160px;
+                    }
+
+                    &.financialPageSelectYear {
+                        width: 128px;
+                    }
+                }
+            }
+        }
+
+        .financialPageLink {
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            color: #fff;
+            display: flex;
+            gap: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            background: #1e3a5f;
+        }
+    }
+
+    .mainInfoContainer {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+
+        .mainInfoBox {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 14px;
+            background: #fff;
+            border: 2px solid #0000001a;
+            padding: 32px 24px 24px;
+
+            &.infoReceitaLiquida {
+                .infoIcon {
+                    background: #dcfce7;
+                }
+            }
+
+            &.infoTotalDespesas {
+                .infoIcon {
+                    background: #ffe2e2;
+                }
+            }
+
+            &.infoRetirada {
+                .infoIcon {
+                    background: #dbeafe;
+                }
+            }
+
+            .infoValue {
+                font-size: 2.20rem;
+                line-height: 1.11111;
+                margin: 0;
+                padding: 0;
+                color: #1e3a5f;
+
+                .infoLabel {
+                    font-size: 1rem;
+                    line-height: 1.5;
+                    color: #6a7282;
+                }
+            }
+
+            .infoIcon {
+                display: flex;
+                align-items: center;
+                padding: 16px;
+                border-radius: 3.40282e38px;
+            }
+        }
+    }
+
+    .graphicsContainer {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+
+        .despesasCharts,
+        .fluxoCharts {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+            background: #fff;
+            border: 1px solid #0000001a;
+            border-radius: 14px;
+
+            .chartTitle {
+                font-size: 1.5rem;
+                font-weight: 500;
+                line-height: 1.5;
+                color: #1e3a5f;
+                text-transform: uppercase;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    }
+
+    .customInfoSection {
+        background: #fff;
+        margin: 32px 0px;
+        padding: 24px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, .1);
+
+        .customInfoSectionTitle {
+            display: flex;
+            gap: 8px;
+            font-size: 1rem;
+            line-height: 1;
+            color: #1e3a5f;
+            margin-bottom: 16px;
+            font-weight: 400;
+        }
+
+        .customInfoSectionAddContent {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            align-items: center;
+
+            .customInfoSectionInput {
+                padding: 6px 10px;
+                border-radius: 4px;
+                border: 1px solid rgb(204, 204, 204);
+                min-width: 120px;
+            }
+
+            .customInfoSectionAddButton {
+                padding: 6px 16px;
+                border-radius: 4px;
+                background: #1e3a5f;
+                color: rgb(255, 255, 255);
+                border: none;
+                cursor: pointer;
+                font-weight: 500;
+                font-family: Poppins, 'Poppins Fallback';
+            }
+
+            .customInfoSectionCount {
+                font-size: 13px;
+                color: #888888;
+            }
+        }
+
+        .customInfoSectionCountContent {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+
+            .customInfoSectionIndex {
+                background: #dbeafe;
+                border-radius: 4px;
+                padding: 4px 10px;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+
+                .customInfoSectionRemoveButton {
+                    margin-left: 6px;
+                    background: none;
+                    border: none;
+                    color: #ff6b35;
+                    cursor: pointer;
+                    font-size: 14px;
+                }
+            }
+        }
+
+        .customInfoSectionValuesContainer {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 16px;
+
+            .customInfoSectionValuesContent {
+                display: flex;
+                flex-direction: column;
+                background: #f3f3f5;
+                align-items: center;
+                justify-content: center;
+                border-radius: 7px;
+                padding: 12px 18px;
+
+                .customInfoSectionValuesTitle {
+                    font-size: 14px;
+                    font-weight: 400;
+                    line-height: 1;
+                    color: #1e3a5f;
+                    text-align: center;
+                }
+
+                .customInfoSectionValuesResult {
+                    font-size: 1.25rem;
+                    line-height: 1.33333;
+                    font-weight: 500;
+                }
+            }
+        }
+
+        .customInfoSectionAddMessage {
+            font-size: 1.25rem;
+            font-weight: 500;
+            text-align: center;
+        }
+    }
+
+    .despesasPessoalInfoContainer {
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        gap: 24px;
+        padding: 24px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, .1);
+        margin-bottom: 24px;
+
+        .despesasPessoalInfoTitle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+            font-weight: 400;
+            line-height: 1;
+            color: #1e3a5f;
+            margin: 0;
+            padding: 0;
+        }
+
+        .despesasPessoalInfoContent {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+
+            .despesasPessoalInfoItem {
+                font-size: 1.5rem;
+                font-weight: 400;
+                line-height: 1.33333;
+                color: #1e3a5f;
+
+                .despesasPessoalInfoLabel {
+                    font-size: 0.875rem;
+                    font-weight: 500;
+                    color: #888888;
+                    line-height: 1.33333;
+                }
+            }
+        }
+    }
+
+    .despesasNormaisInfoContainer {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 24px;
+
+        .despesasNormaisInfoItem {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 14px;
+            padding: 24px;
+            background: #fff;
+            border: 1px solid rgba(0, 0, 0, .1);
+
+            .despesasNormaisInfoText {
+                color: rgb(30, 58, 95);
+                font-size: 1.5rem;
+                font-weight: 400;
+                line-height: 1.33333;
+                margin: 0;
+
+                .despesasNormaisInfoLabel {
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #888888;
+                    margin-bottom: 8px;
+                }
+            }
+
+            .despesasNormaisInfoIcon {
+                display: flex;
+                align-items: center;
+                background: #dbeafe;
+                padding: 12px;
+                border-radius: 3.40282e38px;
+            }
+        }
+    }
+
+    .annualClosingDataContainer {
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, .1);
+        border-radius: 8px;
+        flex-direction: column;
+        gap: 24px;
+        margin-bottom: 24px;
+        padding: 24px;
+        display: flex;
+
+        .annualClosingDataTitle {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .annualClosingDataTitleText {
+                color: #1e3a5f;
+                align-items: center;
+                gap: 8px;
+                margin: 0;
+                padding: 0;
+                font-size: 1rem;
+                font-weight: 400;
+                line-height: 1;
+                display: flex;
+            }
+
+            .annualClosingDataExportButton {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px 16px; 
+                background: #4caf50; 
+                color: #fff; 
+                border: none; 
+                border-radius: 8px; 
+                cursor: pointer;
+                font-weight: 500;
+                font-family: Poppins, 'Poppins Fallback';
+            }
+        }
+
+        .annualClosingDataContent {
+            display: flex;
+            overflow: hidden;
+            .anualClosingDataTableContainer {
+                width: 100vw;
+                overflow-x: auto;
+                border-radius: 8px;
+                scrollbar-width: thin;
+                scrollbar-color: #CCCCFF #9999FF;
+                .annualClosingDataTable {
+                    border-collapse: collapse;
+                    thead {
+                        tr {
+                            background-color: #9999FF;
+
+                            th {
+                                font-size: 10px;
+                                text-align: center;
+                                padding: 5px 10px;
+                                font-weight: 600;
+                                line-height: 1.33333;
+                                text-transform: uppercase;
+                                color: #fff;
+                            }
+                        }
+                    }
+
+                    tbody {
+                        tr {
+                            background-color: #CCCCFF;
+
+                            td {
+                                font-size: 12px;
+                                text-align: center;
+                                padding: 3px 10px;
+                                white-space: nowrap;
+                                height: 30px;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

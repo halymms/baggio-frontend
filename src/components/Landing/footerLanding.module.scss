@@ -1,0 +1,35 @@
+.footer {
+  border-top: 1px solid #f3f4f6;
+  background: #fff;
+  padding: 24px 0;
+}
+
+.footerContent {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.logoRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.logoImg {
+  height: 24px;
+  width: auto;
+}
+
+.sistemaText {
+  font-size: 0.95rem;
+  color: #6b7280;
+}
+
+.copyright {
+  font-size: 0.8rem;
+  color: #9ca3af;
+}

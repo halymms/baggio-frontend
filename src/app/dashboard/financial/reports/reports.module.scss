@@ -1,115 +1,208 @@
 .reportsPage {
-  .backLink {
-    display: flex;
-    align-items: center;
-    text-decoration: none;
-    gap: 8px;
-    background: #ff6b35;
-    color: #fff;
-    width: fit-content;
-    padding: 5px 10px;
-    font-size: 14px;
-    font-weight: 500;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-  }
-
- .reportsHeader {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 24px;
-
-    .reportsTitle{
+    .backLink {
         display: flex;
-        flex-direction: column;
-
-        .reportsTitleText {
-            font-size: 30px;
-            color: #1e3a5f;
-            line-height: 1.5;
-            margin: 0;
-            padding: 0;
-        }
-
-        .reportsDate {
-            font-size: 1rem;
-            font-weight: 400;
-            line-height: 1;
-            color: #1e3a5f;
-            margin: 0;
-            padding: 0;
-        }
-    }
-
-    .reportsSection {
-        display: flex;
-        align-items: end;
-
-        .reportsSectionLabel {
-            font-size: 14px;
-            font-weight: 600;
-            background: #ff6b35;
-            padding: 16px 8px;
-            border-radius: 14px;
-            border: 1px solid #ff6b35;
-            color: #fff;
-        }
-    }
- }   
- .reportsTableContainer {
-    border-radius: 14px;
-    display: flex;
-    overflow: hidden;
-
-    .reportsTable {
-        width: 100%;
-        border-radius: 14px;
-        border: 1px solid rgba(0, 0, 0, .1);
-        border-spacing: 0;
-        background: #fff;
+        align-items: center;
+        text-decoration: none;
+        gap: 8px;
+        background: #ff6b35;
+        color: #fff;
+        width: fit-content;
+        padding: 5px 10px;
         font-size: 14px;
-        line-height: 1.42857;
+        font-weight: 500;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
 
-        .reportsTableHeader {
-            border-radius: 14px;
-            font-size: 0.875rem;
-            font-weight: 500;
+    .reportsHeader {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 24px;
 
-            .reportsTableRow {
-                padding-inline: 24px;
-                padding-top: 0;
-                height: 40px;
-                background: #f3f3f5;
+        .reportsTitle {
+            display: flex;
+            flex-direction: column;
+
+            .reportsTitleText {
+                font-size: 30px;
+                color: #1e3a5f;
+                line-height: 1.5;
+                margin: 0;
+                padding: 0;
+            }
+
+            .reportsDate {
+                font-size: 1rem;
+                font-weight: 400;
+                line-height: 1;
+                color: #1e3a5f;
+                margin: 0;
+                padding: 0;
+            }
+        }
+
+        .reportsSection {
+            display: flex;
+            align-items: end;
+
+            .reportsSectionLabel {
+                font-size: 14px;
+                font-weight: 600;
+                background: #ff6b35;
+                padding: 16px 8px;
                 border-radius: 14px;
+                border: 1px solid #ff6b35;
+                color: #fff;
+            }
+        }
+    }
 
-                .reportsTableCell {
-                    font-weight: 500;
+    .commissionContainer {
+        padding: 16px;
+        background-color: #fff;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        border: 1px solid #e5e7eb;
+
+        .commissionTitle {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #1e3a5f;
+        }
+
+        .commissionEditContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: end;
+
+            .commissionEditItem {
+                label {
+                    display: block;
+                    margin-bottom: 4px;
+                    font-size: 0.875rem;
+                    color: #374151;
+                }
+
+                input {
+                    width: 100%;
+                    padding: 8px;
+                    border-radius: 4px;
+                    border: 1px solid #d1d5db;
+                }
+
+                .commissionValue {
                     color: #1e3a5f;
+                    padding: 8px;
+                    border: 1px solid transparent;
+                    font-weight: 500;
+                }
+
+                .commissionEditItemTextArea {
+                    border: 1px solid #d1d5db;
+                    border-radius: 4px;
+                    width: 100%;
+                    padding: 8px;
+                }
+            }
+        }
+
+        .commissionActionsContainer {
+            .commissionEditButton {
+                background-color: #1e3a5f;
+                color: white;
+                padding: 8px 16px;
+                border-radius: 4px;
+                border: none;
+                cursor: pointer;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+
+            .commissionActionsContent {
+                display: flex;
+                gap: 8px;
+
+                .commissionSaveButton {
+                    background-color: #34c759;
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    border: none;
+                    cursor: pointer;
+                    font-weight: 500;
+                }
+
+                .commissionCancelButton {
+                    background-color: #ef4444;
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 4px;
+                    border: none;
+                    cursor: pointer;
+                    font-weight: 500;
                 }
             }
         }
     }
 
-    .reportsTableBody {
-        .reportsTableRow {
-             .reportsTableCell {
-                padding: 12px 8px;
-                border-bottom: 1px solid rgba(0, 0, 0, .1);
+    .reportsTableContainer {
+        border-radius: 14px;
+        display: flex;
+        overflow: hidden;
 
-                .observacaoCell {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-around;
-                    width: 100%;
-                }
+        .reportsTable {
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid rgba(0, 0, 0, .1);
+            border-spacing: 0;
+            background: #fff;
+            font-size: 14px;
+            line-height: 1.42857;
 
-                .editObsButton {
-                    border: 0;
-                    cursor: pointer;
-                    background-color: transparent;
+            .reportsTableHeader {
+                border-radius: 14px;
+                font-size: 0.875rem;
+                font-weight: 500;
+
+                .reportsTableRow {
+                    padding-inline: 24px;
+                    padding-top: 0;
+                    height: 40px;
+                    background: #f3f3f5;
+                    border-radius: 14px;
+
+                    .reportsTableCell {
+                        font-weight: 500;
+                        color: #1e3a5f;
+                    }
                 }
-             }
+            }
+        }
+
+        .reportsTableBody {
+            .reportsTableRow {
+                .reportsTableCell {
+                    padding: 12px 8px;
+                    border-bottom: 1px solid rgba(0, 0, 0, .1);
+
+                    .observacaoCell {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-around;
+                        width: 100%;
+                    }
+
+                    .editObsButton {
+                        border: 0;
+                        cursor: pointer;
+                        background-color: transparent;
+                    }
+                }
+            }
         }
     }
- }
 }

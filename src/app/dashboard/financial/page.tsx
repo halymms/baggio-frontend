@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import Link from "next/link";
-import { realtimeReportData } from "@/services/api";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { realtimeReportData, getMonthlyClosing } from "@/services/api";
+import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 import {
   DocumentTextIcon,
@@ -16,9 +16,11 @@ import {
   DocumentMagnifyingGlassIcon,
   ChartBarSquareIcon,
   InformationCircleIcon,
-  TableCellsIcon
+  TableCellsIcon,
+  PercentBadgeIcon
 } from '@heroicons/react/24/outline';
 import styles from './financial.module.scss';
+
 
 const months = [
   { value: 0, label: "Janeiro" },
@@ -66,6 +68,7 @@ export default function Page() {
     impostos: number | null,
     totalDespesas: number | null,
     lucroLiquido: number | null,
+    comissaoGestores: number | null,
     retirada: number | null
   }>>([]);
   // Exporta os dados da tabela anual para Excel
@@ -86,7 +89,7 @@ export default function Page() {
       'Impostos': row.impostos ?? '',
       'Despesas': row.totalDespesas ?? '',
       'Lucro Líquido': row.lucroLiquido ?? '',
-      'Comissão Gestores': '',
+      'Comissão Gestores': row.comissaoGestores ?? '',
       'Retirada': row.retirada ?? ''
     }));
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -113,11 +116,19 @@ export default function Page() {
   const [resultadoLiquido, setResultadoLiquido] = useState<number | null>(null);
   const [lucroLiquido, setLucroLiquido] = useState<number | null>(null);
 
-  const [impostos, setImpostos] = useState<number | null>(null);
-  const [totalDespesas, setTotalDespesas] = useState<number | null>(null);
-  const [retirada, setRetirada] = useState<number | null>(null);
+  //Fechamento Vendas
+  const [vendaValorFixo, setVendaValorFixo] = useState<number>(0);
+  const [vendaVariavel, setVendaVariavel] = useState<number>(0);
+  const [margemContribuicao, setMargemContribuicao] = useState<number>(0);
+  const [margemContribuicaoPorcento, setMargemContribuicaoPorcento] = useState<number>(0);
+  const [pontoEquilibrio, setPontoEquilibrio] = useState<number>(0);
+
+  const [impostos, setImpostos] = useState<number>(0);
+  const [totalDespesas, setTotalDespesas] = useState<number>(0);
+  const [retirada, setRetirada] = useState<number>(0);
   const [customIndexes, setCustomIndexes] = useState<string[]>([]);
   const [customInput, setCustomInput] = useState("");
+  const [fundoInovacao, setFundoInovacao] = useState<number>(0);
   const [customValues, setCustomValues] = useState<Array<{ amount: number | null, service: string | null }>>([
     { amount: null, service: null },
     { amount: null, service: null },
@@ -126,6 +137,38 @@ export default function Page() {
     { amount: null, service: null }
   ]);
   const [customLoading, setCustomLoading] = useState(false);
+
+  // States for monthly closing (Moved from reports)
+  const [sinaisNegocio, setSinaisNegocio] = useState<string>("");
+  const [comissoesReceber, setComissoesReceber] = useState<number>(0);
+  const [comissoesReceberProxMes, setComissoesReceberProxMes] = useState<string>("");
+  const [observacaoClosing, setObservacaoClosing] = useState<string>("");
+
+
+  // Fetch Monthly Closing Data
+  useEffect(() => {
+    const mesNum = selectedMonth;
+    const anoNum = selectedYear;
+    getMonthlyClosing(mesNum, anoNum).then(data => {
+      console.log("Comissão", data);
+      console.log("Comissões a receber:", data?.comissoes_receber);
+      if (data && (
+        data.sinais_negocio !== null ||
+        data.comissoes_receber !== null ||
+        data.observacao
+      )) {
+        setSinaisNegocio(data.sinais_negocio ? formatBRL(data.sinais_negocio) : "");
+        setComissoesReceber(data.comissoes_receber ? Number(data.comissoes_receber) : 0);
+        setComissoesReceberProxMes(data.comissoes_receber_prox_mes ? formatBRL(data.comissoes_receber_prox_mes) : "");
+        setObservacaoClosing(data.observacao || "");
+      } else {
+        setSinaisNegocio("");
+        setComissoesReceber(0);
+        setComissoesReceberProxMes("");
+        setObservacaoClosing("");
+      }
+    }).catch(err => console.error("Error fetching closing data", err));
+  }, [selectedMonth, selectedYear]);
 
   // Atualiza os índices customizados
   const handleCustomIndexChange = (idx: number, value: string) => {
@@ -196,6 +239,7 @@ export default function Page() {
         const bens = getAmount("1.2.9.2");
         const direitos = getAmount("1.2.9");
         const investimentos = getAmount("1.2.9.4");
+        const comissaoVendaEfetuada = getAmount("1.2.2.4.4");
         let folhaPagamentoFinal = folhaPagamento;
         const despesasNormaisCalc = (
           despesasGerais
@@ -247,8 +291,8 @@ export default function Page() {
           receitaLiquidaCalc = (receita?.amount ?? 0) - totalDespesasPessoalExtrasCalc - despesasNormaisCalc;
           setReceitaLiquida(receitaLiquidaCalc);
         }
-        if (receitaLiquida && folhaPagamentoFinal && investimentos) {
-          setRetirada(receitaLiquidaCalc - folhaPagamentoFinalCalc - investimentos);
+        if (receitaLiquida && folhaPagamentoFinal && investimentos && comissoesReceber) {
+          setRetirada(receitaLiquidaCalc - folhaPagamentoFinalCalc - investimentos - comissoesReceber);
         }
         if (receitaLiquida) {
           setFundoDeReserva(receitaLiquida * 0.05);
@@ -261,6 +305,31 @@ export default function Page() {
           const lucroLiquidoCalc = resultadoLiquido - folhaPagamento - investimentos;
           setLucroLiquido(lucroLiquidoCalc);
         }
+        if (folhaPagamento || despesasNormaisCalc || impostos) {
+          const resultadoFixo = (despesasNormaisCalc - impostos) + folhaPagamento;
+          setVendaValorFixo(resultadoFixo);
+        }
+        if (selectedSection == 1 && receitaBruta) {
+          setFundoInovacao(receitaBruta * 0.05);
+        } else if (selectedSection == 2 && receitaBruta) {
+          setFundoInovacao(receitaBruta * 0.10);
+        }
+        if (impostos || fundoInovacao || comissoesReceber || comissaoVendaEfetuada) {
+          console.log(comissoesReceber, fundoInovacao, impostos, comissaoVendaEfetuada)
+          const resultadoVariavel = impostos + fundoInovacao + comissaoVendaEfetuada + comissoesReceber;
+          setVendaVariavel(resultadoVariavel);
+        }
+        if (receitaBruta && totalDespesas) {
+          setMargemContribuicao(receitaBruta + totalDespesas);
+        }
+        if (margemContribuicao && receitaBruta) {
+          const resultadoMC = margemContribuicao / receitaBruta;
+          setMargemContribuicaoPorcento(resultadoMC);
+        }
+        if (vendaValorFixo && margemContribuicaoPorcento) {
+          const resultadoMV = -vendaValorFixo / margemContribuicaoPorcento;
+          setPontoEquilibrio(resultadoMV);
+        }
       })
       .catch((err) => {
         setTotalDespesasPessoalExtras(null);
@@ -268,7 +337,7 @@ export default function Page() {
         setComissaoFolha(null);
         console.error("Erro ao buscar contas em tempo real:", err);
       });
-  }, [selectedMonth, selectedYear, selectedSection, totalDespesasPessoal, totalDespesasPessoalExtras]);
+  }, [selectedMonth, selectedYear, selectedSection, totalDespesasPessoal, totalDespesasPessoalExtras, fundoInovacao, impostos]);
 
   useEffect(() => {
     const monthAbbr = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -286,7 +355,10 @@ export default function Page() {
           ]
         };
         try {
-          const res = await realtimeReportData(body);
+          const [res, closingData] = await Promise.all([
+            realtimeReportData(body),
+            getMonthlyClosing(m.value, selectedYear)
+          ]);
           const receita = res.receitas?.find((r: any) => r.index === "1.1");
           const despesa = res.despesas?.find((d: any) => d.index === "1.2");
           const original = res.original || [];
@@ -326,6 +398,9 @@ export default function Page() {
           const investimentos = getAmount("1.2.9.4");
           const despesasNormais =
             despesasGerais + telefones + entidadesDeClasses + materiais + propagandaPublicidadeInstitucional + propagandaPublicidadeProduto + despesasComVeiculos + seguros + assessorias + servicos + manutencoes + copaCozinha + comemoracoes + viagens + locacaoMaquinasEquipamentos + tarifasBancarias + tarifaCartaoCredito + impostosFederais + impostosMunicipais + prejuizoDecorrenteAdmImoveis + bens + direitos;
+
+          const comissoesReceber = closingData?.comissoes_receber ? Number(closingData.comissoes_receber) : 0;
+
           const receitaBruta = receita?.amount ?? null;
           const totalDespesas = despesa?.amount ?? null;
           const impostos = impostosFederais + impostosMunicipais;
@@ -356,8 +431,8 @@ export default function Page() {
             lucroLiquido = resultadoLiquido - folhaPagamentoFinal - investimentos;
           }
           let retirada = null;
-          if (receitaLiquida && folhaPagamentoFinal && investimentos) {
-            retirada = receitaLiquida - folhaPagamentoFinal - investimentos;
+          if (receitaLiquida && folhaPagamentoFinal && investimentos && comissoesReceber !== null) {
+            retirada = receitaLiquida - folhaPagamentoFinal - investimentos - comissoesReceber;
           }
           results.push({
             month: monthAbbr[m.value],
@@ -372,6 +447,7 @@ export default function Page() {
             impostos,
             totalDespesas,
             lucroLiquido,
+            comissaoGestores: comissoesReceber,
             retirada
           });
         } catch {
@@ -388,6 +464,7 @@ export default function Page() {
             impostos: null,
             totalDespesas: null,
             lucroLiquido: null,
+            comissaoGestores: null,
             retirada: null
           });
         }
@@ -513,6 +590,59 @@ export default function Page() {
         setCustomLoading(false);
       });
   }, [customIndexes, selectedMonth, selectedYear, selectedSection]);
+
+  // 5-Year Area Chart Data Fetching
+  const [fiveYearData, setFiveYearData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const yearsToFetch = [2021, 2022, 2023, 2024, 2025];
+    const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+    // Initialize structure
+    // [ { name: "Jan", 2021: 0, 2022: 0, ... }, ... ]
+    let chartData = monthNames.map(name => ({ name }));
+    setFiveYearData([...chartData]);
+
+    const fetchAllData = async () => {
+      // Create a local copy to update
+      const currentChartData = [...chartData];
+
+      for (const year of yearsToFetch) {
+        for (const m of months) {
+          const startDate = new Date(year, m.value, 1);
+          const endDate = new Date(year, m.value + 1, 0);
+          const body = {
+            section: selectedSection, // Assuming we keep the same section filter or if it should be section 1 as implied by index "1"? User said "indice 1", usually implies "Receita" or top level. But section filter might apply. I'll use selectedSection but index "1" is requested.
+            companies: [1, 3, 4, 5, 6, 8, 9],
+            dteRange: [startDate.toISOString(), endDate.toISOString()]
+          };
+
+          try {
+            const res = await realtimeReportData(body);
+            const original = res.original || [];
+            // Find index "1"
+            const item = original.find((i: any) => i.index === "1.1");
+            const amount = item ? Number(item.amount) : 0;
+
+            // Update the specific month/year cell by creating a copy (immutable update)
+            const updatedMonthData: any = { ...currentChartData[m.value] };
+            updatedMonthData[year] = amount;
+            currentChartData[m.value] = updatedMonthData;
+          } catch (error) {
+            console.error(`Error fetching ${m.label}/${year}`, error);
+            const updatedMonthData: any = { ...currentChartData[m.value] };
+            updatedMonthData[year] = 0;
+            currentChartData[m.value] = updatedMonthData;
+          }
+        }
+        // Update state after each year is fully fetched to trigger re-render
+        setFiveYearData([...currentChartData]);
+      }
+    };
+
+    fetchAllData();
+  }, [selectedSection]); // Re-fetch if section changes. User didn't specify section but implied index "1". Usually Index 1 is Revenue.
+
 
   return (
     <div className={styles.financialPageContainer}>
@@ -743,6 +873,50 @@ export default function Page() {
           </div>
         </div>
       </div>
+      {selectedSection === 2 && (
+        <div className={styles.closingSalesContainer}>
+          <h4 className={styles.closingSalesTitle}><PercentBadgeIcon width={20} height={20} /> Fechamento Vendas</h4>
+          <div className={styles.closingSalesCardsContainer}>
+            <div className={styles.closingSalesCard}>
+              <p>
+                <span>Fixo</span>
+                <br />
+                {vendaValorFixo !== null ? formatBRL(vendaValorFixo) : '---'}
+              </p>
+            </div>
+            <div className={styles.closingSalesCard}>
+              <p>
+                <span>Variável</span>
+                <br />
+                {vendaVariavel !== null ? formatBRL(vendaVariavel) : '---'}
+              </p>
+            </div>
+            <div className={styles.closingSalesCard}>
+              <p>
+                <span>Margem de Contribuição</span>
+                <br />
+                {margemContribuicao !== null ? formatBRL(margemContribuicao) : '---'}
+              </p>
+            </div>
+            <div className={styles.closingSalesCard}>
+              <p>
+                <span>MC em %</span>
+                <br />
+                {margemContribuicaoPorcento !== null ? (margemContribuicaoPorcento * 100).toFixed(2) + '%' : '---'}
+              </p>
+            </div>
+            <div className={styles.closingSalesCard}>
+              <p>
+                <span>Ponto de Equilíbrio</span>
+                <br />
+                {pontoEquilibrio !== null ? formatBRL(pontoEquilibrio) : '---'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+
       <div className={styles.despesasNormaisInfoContainer}>
         <div className={`${styles.despesasNormaisInfoItem} ${styles.cardDespesasNormais}`}>
           <p className={styles.despesasNormaisInfoText}>
@@ -795,6 +969,25 @@ export default function Page() {
           </div>
         </div>
       </div>
+      <div className={styles.annualInfoContainer}>
+        <h2 className={styles.chartTitle}><CurrencyDollarIcon width={20} height={20} /> Receita Financeira - Resultados Anuais</h2>
+        <div className={styles.chartWrapper}>
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={fiveYearData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <XAxis dataKey="name" />
+              <YAxis tickFormatter={(val) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact' }).format(val)} />
+              <CartesianGrid strokeDasharray="3 3" />
+              <Tooltip formatter={(value: number) => formatBRL(value)} />
+              <Legend />
+              <Line type="monotone" dataKey="2021" stroke="#8884d8" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="2022" stroke="#82ca9d" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="2023" stroke="#ffc658" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="2024" stroke="#ff7300" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="2025" stroke="#0088FE" strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
       <div className={styles.annualClosingDataContainer}>
         <div className={styles.annualClosingDataTitle}>
           <h4 className={styles.annualClosingDataTitleText}><BriefcaseIcon width={20} height={20} /> Dados do Fechamento Anual</h4>
@@ -843,7 +1036,7 @@ export default function Page() {
                     <td>{row.impostos !== null ? formatBRL(row.impostos) : '---'}</td>
                     <td>{row.totalDespesas !== null ? formatBRL(row.totalDespesas) : '---'}</td>
                     <td>{row.lucroLiquido !== null ? formatBRL(row.lucroLiquido) : '---'}</td>
-                    <td>---</td>
+                    <td>{row.comissaoGestores !== null ? formatBRL(row.comissaoGestores) : '---'}</td>
                     <td>{row.retirada !== null ? formatBRL(row.retirada) : '---'}</td>
                   </tr>
                 ))}

@@ -8,6 +8,7 @@ export async function getItemData(itemId: number, mes: number, ano: number) {
 }
 
 // Cadastrar/editar dados de um item para um mês/ano (inclui observacao)
+
 export async function upsertItemData(
   itemId: number,
   planejado: number | null,
@@ -22,6 +23,30 @@ export async function upsertItemData(
     method,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body)
+  });
+  return res;
+}
+
+// Buscar dados do fechamento mensal
+export async function getMonthlyClosing(mes: number, ano: number) {
+  const res = await fetch(`${API_URL}/api/properfy/monthly-closing?mes=${mes}&ano=${ano}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+// Cadastrar/atualizar dados do fechamento mensal
+export async function upsertMonthlyClosing(data: {
+  mes: number;
+  ano: number;
+  sinais_negocio: number;
+  comissoes_receber: number;
+  comissoes_receber_prox_mes: number;
+  observacao: string;
+}) {
+  const res = await fetch(`${API_URL}/api/properfy/monthly-closing`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
   });
   return res;
 }

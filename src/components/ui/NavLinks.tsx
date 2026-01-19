@@ -3,7 +3,8 @@
 import {
   UserGroupIcon,
   HomeIcon,
-  ChartBarSquareIcon
+  ChartBarSquareIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -15,6 +16,11 @@ const links = [
     name: 'Financeiro',
     href: '/dashboard/financial',
     icon: ChartBarSquareIcon,
+  },
+  {
+    name: 'Imóveis',
+    href: '/dashboard/property',
+    icon: BuildingOfficeIcon,
   },
   { name: 'Usuários', href: '/dashboard/users', icon: UserGroupIcon },
 ];

@@ -1,0 +1,30 @@
+.propertyPageContainer {
+    .propertyPageHeader {
+        margin-bottom: 24px;
+
+        .propertyPageTitle {
+            font-size: 30px;
+            font-weight: 700;
+            color: #1e3a5f;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+
+        .propertyPageSubtitle {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #1e3a5f;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+    }
+
+    .mainInfoContainer {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 24px;
+        margin-bottom: 24px;
+    }
+}

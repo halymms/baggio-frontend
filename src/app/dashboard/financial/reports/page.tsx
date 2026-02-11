@@ -314,7 +314,7 @@ export default function Page() {
       </div>
 
       {/* Monthly Closing Section */}
-      {month && year && (
+      {month && year && selectedSection == 2 && (
         <div className={styles.commissionContainer}>
           <h3 className={styles.commissionTitle}>Dados de Comissão</h3>
           <div className={styles.commissionEditContainer}>

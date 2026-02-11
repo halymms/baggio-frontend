@@ -10,6 +10,7 @@ import {
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   CurrencyDollarIcon,
+  ReceiptPercentIcon,
   UserGroupIcon,
   BriefcaseIcon,
   BanknotesIcon,
@@ -17,7 +18,10 @@ import {
   ChartBarSquareIcon,
   InformationCircleIcon,
   TableCellsIcon,
-  PercentBadgeIcon
+  PercentBadgeIcon,
+  CalendarDateRangeIcon,
+  CalendarDaysIcon,
+  PresentationChartLineIcon
 } from '@heroicons/react/24/outline';
 import styles from './financial.module.scss';
 
@@ -71,6 +75,14 @@ export default function Page() {
     comissaoGestores: number | null,
     retirada: number | null
   }>>([]);
+
+  // Estado para gráfico de área empilhada (5 anos)
+  const [annualStackedData, setAnnualStackedData] = useState<Array<{
+    year: string;
+    receitaBruta: number;
+    despesas: number;
+    retirada: number;
+  }>>([]);
   // Exporta os dados da tabela anual para Excel
   const exportToExcel = () => {
     if (!annualClosingData || annualClosingData.length === 0) return;
@@ -108,13 +120,16 @@ export default function Page() {
   const [totalDespesasPessoal, setTotalDespesasPessoal] = useState<number | null>(null);
   const [comissaoFolha, setComissaoFolha] = useState<number | null>(null);
   const [fundoDeReserva, setFundoDeReserva] = useState<number | null>(null);
-  const [folhaPagamento, setFolhaPagamento] = useState<number | null>(null);
+  const [folhaDePagamento, setFolhaDePagamento] = useState<number | null>(null);
   const [despesasNormais, setDespesasNormais] = useState<number | null>(null);
   const [investimentos, setInvestimentos] = useState<number | null>(null);
   const [receitaBruta, setReceitaBruta] = useState<number | null>(null);
   const [receitaLiquida, setReceitaLiquida] = useState<number | null>(null);
   const [resultadoLiquido, setResultadoLiquido] = useState<number | null>(null);
+  const [calculoFolhaPagamento, setCalculoFolhaPagamento] = useState<number | null>(null);
   const [lucroLiquido, setLucroLiquido] = useState<number | null>(null);
+  const [comissaoGestor, setComissaoGestor] = useState<number | null>(null);
+  const [porcetagemRetirada, setPorcentagemRetirada] = useState<number | null>(null);
 
   //Fechamento Vendas
   const [vendaValorFixo, setVendaValorFixo] = useState<number>(0);
@@ -150,8 +165,6 @@ export default function Page() {
     const mesNum = selectedMonth;
     const anoNum = selectedYear;
     getMonthlyClosing(mesNum, anoNum).then(data => {
-      console.log("Comissão", data);
-      console.log("Comissões a receber:", data?.comissoes_receber);
       if (data && (
         data.sinais_negocio !== null ||
         data.comissoes_receber !== null ||
@@ -201,7 +214,6 @@ export default function Page() {
     };
     realtimeReportData(body)
       .then((res) => {
-        console.log("Dados de contas em tempo real:", res);
         const receita = res.receitas?.find((r: any) => r.index === "1.1");
         const despesa = res.despesas?.find((d: any) => d.index === "1.2");
         const original = res.original || [];
@@ -209,6 +221,7 @@ export default function Page() {
           const found = original.find((item: any) => item.index === idx);
           return found ? Number(found.amount) : 0;
         };
+        // const locacao = getAmount("1.1.1");
         const folhaPagamento = getAmount("1.2.2.1");
         const outrasDespesasPessoal = getAmount("1.2.2.2");
         const proLabore = getAmount("1.2.2.1.12");
@@ -230,97 +243,129 @@ export default function Page() {
         const copaCozinha = getAmount("1.2.1.13");
         const comemoracoes = getAmount("1.2.1.14");
         const viagens = getAmount("1.2.1.16");
-        const locacaoMaquinasEquipamentos = getAmount("1.2.9.2.3");
         const tarifasBancarias = getAmount("1.2.3.1");
         const tarifaCartaoCredito = getAmount("1.2.3.3");
         const impostosFederais = getAmount("1.2.4.1");
         const impostosMunicipais = getAmount("1.2.4.2");
+        const doacoes = getAmount("1.2.1.12");
         const prejuizoDecorrenteAdmImoveis = getAmount("1.2.8.1");
         const bens = getAmount("1.2.9.2");
         const direitos = getAmount("1.2.9");
-        const investimentos = getAmount("1.2.9.4");
+        const investimentosVals = getAmount("1.2.9.4");
         const comissaoVendaEfetuada = getAmount("1.2.2.4.4");
-        let folhaPagamentoFinal = folhaPagamento;
+        const assinaturas = getAmount("1.2.1.15");
+        const jurosPagos = getAmount("1.2.3.2");
+        const reformas = getAmount("1.2.9.1");
+
         const despesasNormaisCalc = (
           despesasGerais
-          + telefones +
-          entidadesDeClasses +
-          materiais +
-          propagandaPublicidadeInstitucional +
-          propagandaPublicidadeProduto +
-          despesasComVeiculos +
-          seguros +
-          assessorias +
-          servicos +
-          manutencoes +
-          copaCozinha +
-          comemoracoes +
-          viagens +
-          locacaoMaquinasEquipamentos +
-          tarifasBancarias +
-          tarifaCartaoCredito +
-          impostosFederais +
-          impostosMunicipais +
-          prejuizoDecorrenteAdmImoveis +
-          bens +
-          direitos
+          + telefones
+          + entidadesDeClasses
+          + materiais
+          + propagandaPublicidadeInstitucional
+          + propagandaPublicidadeProduto
+          + despesasComVeiculos
+          + seguros
+          + assessorias
+          + servicos
+          + manutencoes
+          + doacoes
+          + copaCozinha
+          + comemoracoes
+          + assinaturas
+          + viagens
+          + tarifasBancarias
+          + jurosPagos
+          + tarifaCartaoCredito
+          + impostosFederais
+          + impostosMunicipais
+          + prejuizoDecorrenteAdmImoveis
         );
+
         setDespesasNormais(despesasNormaisCalc);
         setReceitaBruta(receita?.amount ?? 0);
-        setTotalDespesas(despesa?.amount ?? 0);
-        setImpostos(impostosFederais + impostosMunicipais);
-        setInvestimentos(investimentos);
-        const totalDespesasPessoalExtrasCalc = (folhaPagamento + outrasDespesasPessoal) - proLabore - salarios;
+
+        const impostosTotal = impostosFederais + impostosMunicipais;
+        setImpostos(impostosTotal);
+        setInvestimentos(investimentosVals);
+
+        const primeiroCalcDespesaPessoalExtra = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal)
+        const totalDespesasPessoalExtrasCalc = primeiroCalcDespesaPessoalExtra - Math.abs(proLabore) - Math.abs(salarios);
         setTotalDespesasPessoalExtras(totalDespesasPessoalExtrasCalc);
-        const totalDespesasPessoalCalc = folhaPagamento + outrasDespesasPessoal + gratificacoesPremiacoes + comissaoLocacaoImoveis + ajudaDeCusto;
+
+        const totalDespesasPessoalCalc = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(gratificacoesPremiacoes) + Math.abs(comissaoLocacaoImoveis) + Math.abs(ajudaDeCusto) - Math.abs(proLabore);
         setTotalDespesasPessoal(totalDespesasPessoalCalc);
 
         let comissaoFolhaCalc = 0;
-        if (totalDespesasPessoalCalc && totalDespesasPessoalExtrasCalc && salarios) {
-          comissaoFolhaCalc = totalDespesasPessoalCalc - totalDespesasPessoalExtrasCalc - salarios;
+        if (totalDespesasPessoalCalc) {
+          comissaoFolhaCalc = Math.abs(totalDespesasPessoalCalc) - Math.abs(totalDespesasPessoalExtrasCalc) - Math.abs(salarios);
           setComissaoFolha(comissaoFolhaCalc);
         }
-        let folhaPagamentoFinalCalc = salarios;
-        if (comissaoFolhaCalc && salarios) {
-          folhaPagamentoFinalCalc = comissaoFolhaCalc + salarios;
-        }
-        setFolhaPagamento(folhaPagamentoFinalCalc);
+
+        setFolhaDePagamento(folhaPagamento);
 
         let receitaLiquidaCalc = 0;
         if (totalDespesasPessoalExtrasCalc && despesasNormaisCalc) {
-          receitaLiquidaCalc = (receita?.amount ?? 0) - totalDespesasPessoalExtrasCalc - despesasNormaisCalc;
+          receitaLiquidaCalc = Math.abs(receita?.amount ?? 0) - Math.abs(totalDespesasPessoalExtrasCalc) - Math.abs(despesasNormaisCalc);
           setReceitaLiquida(receitaLiquidaCalc);
         }
-        if (receitaLiquida && folhaPagamentoFinal && investimentos && comissoesReceber) {
-          setRetirada(receitaLiquidaCalc - folhaPagamentoFinalCalc - investimentos - comissoesReceber);
+
+        let fundoDeReservaCalc = 0;
+        if (receitaLiquidaCalc) {
+          fundoDeReservaCalc = receitaLiquidaCalc * 0.05;
+          setFundoDeReserva(fundoDeReservaCalc);
         }
-        if (receitaLiquida) {
-          setFundoDeReserva(receitaLiquida * 0.05);
+
+        let fundoInovacaoCalc = 0;
+        if (selectedSection == 1 && receitaLiquidaCalc) {
+          fundoInovacaoCalc = receitaLiquidaCalc * 0.05;
+          setFundoInovacao(fundoInovacaoCalc);
+        } else if (selectedSection == 2 && receitaLiquidaCalc) {
+          fundoInovacaoCalc = receitaLiquidaCalc * 0.10;
+          setFundoInovacao(fundoInovacaoCalc);
         }
-        if (receitaLiquida && fundoDeReserva) {
-          const resultadoLiquidoCalc = receitaLiquida - fundoDeReserva - fundoDeReserva;
+
+        let resultadoLiquidoCalc = 0;
+        if (receitaLiquidaCalc) {
+          resultadoLiquidoCalc = Number(receitaLiquidaCalc) - Number(fundoInovacaoCalc);
           setResultadoLiquido(resultadoLiquidoCalc);
         }
-        if (resultadoLiquido) {
-          const lucroLiquidoCalc = resultadoLiquido - folhaPagamento - investimentos;
+
+        let calculoFolhaPagamentoCalc = 0;
+        if (comissaoFolhaCalc && salarios) {
+          calculoFolhaPagamentoCalc = Math.abs(comissaoFolhaCalc) + Math.abs(salarios);
+          setCalculoFolhaPagamento(calculoFolhaPagamentoCalc);
+        }
+
+        if (resultadoLiquidoCalc || calculoFolhaPagamento || investimentosVals) {
+          const lucroLiquidoCalc = Math.abs(resultadoLiquidoCalc) - Math.abs(calculoFolhaPagamento) - Math.abs(investimentosVals);
           setLucroLiquido(lucroLiquidoCalc);
         }
-        if (folhaPagamento || despesasNormaisCalc || impostos) {
-          const resultadoFixo = (despesasNormaisCalc - impostos) + folhaPagamento;
+
+        if (folhaPagamento || despesasNormaisCalc || impostosTotal) {
+          const resultadoFixo = Math.abs(despesasNormaisCalc) - Math.abs(impostosTotal) + Math.abs(folhaPagamento);
           setVendaValorFixo(resultadoFixo);
         }
-        if (selectedSection == 1 && receitaBruta) {
-          setFundoInovacao(receitaBruta * 0.05);
-        } else if (selectedSection == 2 && receitaBruta) {
-          setFundoInovacao(receitaBruta * 0.10);
+
+        if (lucroLiquido) {
+          console.log("Lucro Liquido", lucroLiquido);
+          setComissaoGestor(lucroLiquido * 0.208);
+        }
+        if (comissaoFolha && salarios) {
+          const calculoFolhaPagamentoCalc = Math.abs(comissaoFolha) + Math.abs(salarios);
+          setCalculoFolhaPagamento(calculoFolhaPagamentoCalc);
+        }
+        if (selectedSection == 1 && receitaLiquida) {
+          setFundoInovacao(receitaLiquida * 0.05);
+        } else if (selectedSection == 2 && receitaLiquida) {
+          setFundoInovacao(receitaLiquida * 0.10);
         }
         if (impostos || fundoInovacao || comissoesReceber || comissaoVendaEfetuada) {
-          console.log(comissoesReceber, fundoInovacao, impostos, comissaoVendaEfetuada)
-          const resultadoVariavel = impostos + fundoInovacao + comissaoVendaEfetuada + comissoesReceber;
+          const resultadoVariavel = Math.abs(impostos) + Math.abs(fundoInovacao) + Math.abs(comissaoVendaEfetuada) + Math.abs(comissoesReceber);
           setVendaVariavel(resultadoVariavel);
         }
         if (receitaBruta && totalDespesas) {
-          setMargemContribuicao(receitaBruta + totalDespesas);
+          setMargemContribuicao(Math.abs(receitaBruta) + Math.abs(totalDespesas));
         }
         if (margemContribuicao && receitaBruta) {
           const resultadoMC = margemContribuicao / receitaBruta;
@@ -330,6 +375,19 @@ export default function Page() {
           const resultadoMV = -vendaValorFixo / margemContribuicaoPorcento;
           setPontoEquilibrio(resultadoMV);
         }
+        if (totalDespesasPessoalExtrasCalc || despesasNormais || comissaoGestor || fundoInovacao || comissaoFolha || investimentosVals || salarios) {
+          const calculoTotalDespesas = Math.abs(totalDespesasPessoalExtrasCalc) + Math.abs(salarios) + Math.abs(comissaoFolha) + Math.abs(despesasNormais) + Math.abs(fundoInovacao) + Math.abs(investimentosVals) + Math.abs(comissaoGestor);
+          setTotalDespesas(calculoTotalDespesas);
+        }
+
+        if (resultadoLiquido || calculoFolhaPagamento || investimentosVals || comissaoGestor) {
+          const retiradaCalc = resultadoLiquido - Math.abs(calculoFolhaPagamento) - Math.abs(investimentosVals) - Math.abs(comissaoGestor);
+          setRetirada(retiradaCalc);
+        }
+        if (receitaBruta && retirada) {
+          const porcentagemRetiradaCalc = Math.abs(retirada) / Math.abs(receitaBruta) * 100;
+          setPorcentagemRetirada(porcentagemRetiradaCalc);
+        }
       })
       .catch((err) => {
         setTotalDespesasPessoalExtras(null);
@@ -337,7 +395,7 @@ export default function Page() {
         setComissaoFolha(null);
         console.error("Erro ao buscar contas em tempo real:", err);
       });
-  }, [selectedMonth, selectedYear, selectedSection, totalDespesasPessoal, totalDespesasPessoalExtras, fundoInovacao, impostos]);
+  }, [selectedMonth, selectedYear, selectedSection, totalDespesasPessoal, totalDespesasPessoalExtras, fundoInovacao, impostos, lucroLiquido]);
 
   useEffect(() => {
     const monthAbbr = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -410,10 +468,6 @@ export default function Page() {
           if (totalDespesasPessoal && totalDespesasPessoalExtras && salarios) {
             comissaoFolha = totalDespesasPessoal - totalDespesasPessoalExtras - salarios;
           }
-          let folhaPagamentoFinal = folhaPagamento;
-          if (comissaoFolha && salarios) {
-            folhaPagamentoFinal = comissaoFolha + salarios;
-          }
           let receitaLiquida = null;
           if (totalDespesasPessoalExtras && despesasNormais) {
             receitaLiquida = (receita?.amount ?? 0) - totalDespesasPessoalExtras - despesasNormais;
@@ -428,11 +482,11 @@ export default function Page() {
           }
           let lucroLiquido = null;
           if (resultadoLiquido) {
-            lucroLiquido = resultadoLiquido - folhaPagamentoFinal - investimentos;
+            lucroLiquido = resultadoLiquido - folhaPagamento - investimentos;
           }
           let retirada = null;
-          if (receitaLiquida && folhaPagamentoFinal && investimentos && comissoesReceber !== null) {
-            retirada = receitaLiquida - folhaPagamentoFinal - investimentos - comissoesReceber;
+          if (receitaLiquida && folhaPagamento && investimentos && comissoesReceber) {
+            retirada = receitaLiquida - folhaPagamento - investimentos - comissoesReceber;
           }
           results.push({
             month: monthAbbr[m.value],
@@ -442,7 +496,7 @@ export default function Page() {
             receitaLiquida,
             fundoDeReserva,
             resultadoLiquido,
-            folhaPagamento: folhaPagamentoFinal,
+            folhaPagamento,
             investimentos,
             impostos,
             totalDespesas,
@@ -644,12 +698,135 @@ export default function Page() {
   }, [selectedSection]); // Re-fetch if section changes. User didn't specify section but implied index "1". Usually Index 1 is Revenue.
 
 
+  // Fetch 5-Year Data for Stacked Area Chart (Revenue, Expenses, Withdrawal) - Monthly Granularity
+  useEffect(() => {
+    const fetchAnnualStackedData = async () => {
+      const yearsToFetch = [currentYear - 4, currentYear - 3, currentYear - 2, currentYear - 1, currentYear];
+      const monthAbbr = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+      let allMonthsData: any[] = [];
+
+      for (const year of yearsToFetch) {
+        // Determine months to fetch for this year
+        const currentMonthIndex = new Date().getMonth();
+        const monthsToFetch = year === currentYear
+          ? months.filter(m => m.value <= currentMonthIndex)
+          : months;
+
+        // Fetch selected months for the year in parallel
+        const promises = monthsToFetch.map(async (m) => {
+          const startDate = new Date(year, m.value, 1);
+          const endDate = new Date(year, m.value + 1, 0);
+
+          try {
+            // 1. Fetch Realtime Report
+            const body = {
+              section: selectedSection,
+              companies: [1, 3, 4, 5, 6, 8, 9],
+              dteRange: [startDate.toISOString(), endDate.toISOString()]
+            };
+            const res = await realtimeReportData(body);
+            const original = res.original || [];
+            const getAmount = (idx: string) => {
+              const found = original.find((item: any) => item.index === idx);
+              return found ? Number(found.amount) : 0;
+            };
+
+            const receitaBruta = getAmount("1.1");
+            const totalDespesas = getAmount("1.2");
+
+            // Calculate components for Retirada
+            const folhaPagamento = getAmount("1.2.2.1");
+            const outrasDespesasPessoal = getAmount("1.2.2.2");
+            const proLabore = getAmount("1.2.2.1.12");
+            const salarios = getAmount("1.2.2.1.14");
+            const gratificacoesPremiacoes = getAmount("1.2.2.5");
+            const comissaoLocacaoImoveis = getAmount("1.2.2.3");
+            const despesasGerais = getAmount("1.2.1.1");
+            const telefones = getAmount("1.2.1.2");
+            const entidadesDeClasses = getAmount("1.2.1.3");
+            const materiais = getAmount("1.2.1.4");
+            const propagandaPublicidadeInstitucional = getAmount("1.2.1.5");
+            const propagandaPublicidadeProduto = getAmount("1.2.1.6");
+            const despesasComVeiculos = getAmount("1.2.1.7");
+            const seguros = getAmount("1.2.1.8");
+            const assessorias = getAmount("1.2.1.9");
+            const servicos = getAmount("1.2.1.10");
+            const manutencoes = getAmount("1.2.1.11");
+            const ajudaDeCusto = getAmount("1.2.2.6");
+            const copaCozinha = getAmount("1.2.1.13");
+            const comemoracoes = getAmount("1.2.1.14");
+            const viagens = getAmount("1.2.1.16");
+            const locacaoMaquinasEquipamentos = getAmount("1.2.9.2.3");
+            const tarifasBancarias = getAmount("1.2.3.1");
+            const tarifaCartaoCredito = getAmount("1.2.3.3");
+            const impostosFederais = getAmount("1.2.4.1");
+            const impostosMunicipais = getAmount("1.2.4.2");
+            const prejuizoDecorrenteAdmImoveis = getAmount("1.2.8.1");
+            const bens = getAmount("1.2.9.2");
+            const direitos = getAmount("1.2.9");
+            const investimentos = getAmount("1.2.9.4");
+            const despesasNormais =
+              despesasGerais + telefones + entidadesDeClasses + materiais + propagandaPublicidadeInstitucional + propagandaPublicidadeProduto + despesasComVeiculos + seguros + assessorias + servicos + manutencoes + copaCozinha + comemoracoes + viagens + locacaoMaquinasEquipamentos + tarifasBancarias + tarifaCartaoCredito + impostosFederais + impostosMunicipais + prejuizoDecorrenteAdmImoveis + bens + direitos;
+
+            const primeiroCalcTotalDespesasExtras = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal);
+            const totalDespesasPessoalExtras = primeiroCalcTotalDespesasExtras - Math.abs(proLabore) - Math.abs(salarios);
+
+            let receitaLiquida = 0;
+            if (totalDespesasPessoalExtras && despesasNormais) {
+              receitaLiquida = Math.abs(receitaBruta ?? 0) - Math.abs(totalDespesasPessoalExtras) - Math.abs(despesasNormais);
+            }
+
+            // 2. Fetch Monthly Closing
+            const closingData = await getMonthlyClosing(m.value, year).catch(() => null);
+            let comissoesReceber = 0;
+            if (closingData && closingData.comissoes_receber) {
+              comissoesReceber = Number(closingData.comissoes_receber);
+            }
+
+            // 3. Calculate Retirada
+            let retirada = receitaLiquida - folhaPagamento - investimentos - comissoesReceber;
+
+            return {
+              year: `${monthAbbr[m.value]}/${year.toString().slice(-2)}`, // Format: Jan/21
+              fullDate: startDate, // For sorting if needed
+              receitaBruta: receitaBruta,
+              despesas: totalDespesas,
+              retirada: retirada > 0 ? retirada : 0
+            };
+          } catch (err) {
+            console.error(`Error fetching data for ${m.label}/${year}`, err);
+            return {
+              year: `${monthAbbr[m.value]}/${year.toString().slice(-2)}`,
+              fullDate: startDate,
+              receitaBruta: 0,
+              despesas: 0,
+              retirada: 0
+            };
+          }
+        });
+
+        const yearResults = await Promise.all(promises);
+        // Sort by month index to ensure order
+        yearResults.sort((a, b) => a.fullDate.getTime() - b.fullDate.getTime());
+        allMonthsData = [...allMonthsData, ...yearResults];
+
+        // Update state incrementally per year to provide feedback
+        setAnnualStackedData([...allMonthsData]);
+      }
+    };
+
+    fetchAnnualStackedData();
+  }, [selectedSection]);
+
+
   return (
     <div className={styles.financialPageContainer}>
       <div className={styles.financialPageHeader}>
         <h1 className={styles.financialPageTitle}>Módulo Financeiro</h1>
         <p className={styles.financialPageSubtitle}>Visão geral das receitas e despesas</p>
       </div>
+
       <div className={styles.financialPageActionContent}>
         <div className={styles.financialPageFiltersContainer}>
           <div className={styles.financialPageSelectContent}>
@@ -676,6 +853,15 @@ export default function Page() {
         <Link className={styles.financialPageLink} href={`/dashboard/financial/reports?month=${selectedMonth}&year=${selectedYear}&section=${selectedSection}`}>
           <DocumentTextIcon width={24} height={24} /> Fechamento
         </Link>
+      </div>
+      <div className={styles.financialPageHeader}>
+        <h2
+          className={styles.financialPageTitle}
+          style={{ fontSize: '20px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}
+        >
+          <CalendarDateRangeIcon width={20} height={20} />
+          Dados Mensais
+        </h2>
       </div>
       <div className={styles.mainInfoContainer}>
         <div className={`${styles.mainInfoBox} ${styles.infoReceitaLiquida}`}>
@@ -714,59 +900,60 @@ export default function Page() {
             <CurrencyDollarIcon height={32} width={32} color="#155dfc" />
           </div>
         </div>
+        <div className={`${styles.mainInfoBox} ${styles.infoRetirada}`}>
+          <p className={styles.infoValue}>
+            <span className={styles.infoLabel}>
+              % RETIRADA
+            </span>
+            <br />
+            {porcetagemRetirada !== null ? porcetagemRetirada.toFixed(2) : '---'}%
+          </p>
+          <div className={styles.infoIcon}>
+            <ReceiptPercentIcon height={32} width={32} color="#155dfc" />
+          </div>
+        </div>
       </div>
       <div className={styles.graphicsContainer}>
         <div className={styles.despesasCharts}>
-          <h2 className={styles.chartTitle}>Composição das Despesas</h2>
+          <h2 className={styles.chartTitle}>Pizza Resumo Total</h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={[
-                  { value: folhaPagamento !== null ? folhaPagamento : 0, absValue: Math.abs(folhaPagamento ?? 0), name: 'Folha de Pagamento' },
-                  { value: comissaoFolha !== null ? comissaoFolha : 0, absValue: Math.abs(comissaoFolha ?? 0), name: 'Comissão Folha' },
-                  { value: totalDespesasPessoal !== null ? totalDespesasPessoal : 0, absValue: Math.abs(totalDespesasPessoal ?? 0), name: 'Despesas com Pessoal' },
-                  { value: totalDespesasPessoalExtras !== null ? totalDespesasPessoalExtras : 0, absValue: Math.abs(totalDespesasPessoalExtras ?? 0), name: 'Despesas com Pessoal Extra' },
-                  { value: despesasNormais !== null ? despesasNormais : 0, absValue: Math.abs(despesasNormais ?? 0), name: 'Despesas Normais' },
-                  { value: investimentos !== null ? investimentos : 0, absValue: Math.abs(investimentos ?? 0), name: 'Investimentos' }
-                ]}
-                dataKey="absValue"
+                data={(() => {
+                  const pieData = [
+                    { value: Math.abs(despesasNormais ?? 0), name: 'Despesas Normais' },
+                    { value: Math.abs(totalDespesasPessoal ?? 0), name: 'Despesas com Pessoal' },
+                    { value: Math.abs(folhaDePagamento ?? 0), name: 'Folha de Pagamento' },
+                    { value: Math.abs(fundoInovacao ?? 0), name: 'Fundo Inovação' },
+                    { value: Math.abs(comissoesReceber ?? 0), name: 'Comissão Gestores' },
+                    { value: Math.abs(investimentos ?? 0), name: 'Investimentos' },
+                    { value: Math.abs(retirada ?? 0), name: 'Retirada' }
+                  ];
+                  const total = pieData.reduce((acc, item) => acc + item.value, 0);
+
+                  return pieData.map(item => ({
+                    ...item,
+                    percent: total ? item.value / total : 0
+                  }));
+                })()}
+                dataKey="value"
                 nameKey="name"
                 cx="50%"
                 cy="50%"
                 fill="#1e3a5f"
                 isAnimationActive={true}
                 outerRadius={100}
-                label={({
-                  x,
-                  y,
-                  cx,
-                  cy,
-                  midAngle,
-                  innerRadius,
-                  outerRadius,
-                  percent,
-                  index,
-                  value
-                }: any) => {
-                  return (
-                    <text x={x} y={y} fill="#666" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12}>
-                      {`${formatBRL(value)} (${(percent * 100).toFixed(2)}%)`}
-                    </text>
-                  );
-                }}
+                label={({ x, y, cx, value, percent, name }: any) => (
+                  <text x={x} y={y} fill="#666" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12}>
+                    {`${formatBRL(value)} (${(percent * 100).toFixed(2)}%)`}
+                  </text>
+                )}
               >
-                {[
-                  folhaPagamento !== null ? folhaPagamento : 0,
-                  comissaoFolha !== null ? comissaoFolha : 0,
-                  totalDespesasPessoal !== null ? totalDespesasPessoal : 0,
-                  totalDespesasPessoalExtras !== null ? totalDespesasPessoalExtras : 0,
-                  despesasNormais !== null ? despesasNormais : 0,
-                  investimentos !== null ? investimentos : 0
-                ].map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#aaa'][index % 7]} />
+                {[0, 1, 2, 3, 4, 5, 6].map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#a4de6c'][index]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value, name, props) => [formatBRL(props.payload.value), name]} />
+              <Tooltip formatter={(value, name, props) => [formatBRL(value), name]} />
               <Legend />
             </PieChart>
           </ResponsiveContainer>
@@ -796,6 +983,7 @@ export default function Page() {
           </ResponsiveContainer>
         </div>
       </div>
+
       <div className={styles.customInfoSection}>
         <h4 className={styles.customInfoSectionTitle}> <InformationCircleIcon width={20} height={20} /> Informações Destaques</h4>
         <div className={styles.customInfoSectionAddContent}>
@@ -850,19 +1038,21 @@ export default function Page() {
             <br />
             {totalDespesasPessoal !== null ? formatBRL(totalDespesasPessoal) : '---'}
           </div>
+          {selectedSection === 1 && (
+            <div className={styles.despesasPessoalInfoItem}>
+              <span className={styles.despesasPessoalInfoLabel}>
+                FOLHA DE PAGAMENTO
+              </span>
+              <br />
+              {calculoFolhaPagamento !== null ? formatBRL(calculoFolhaPagamento) : '---'}
+            </div>
+          )}
           <div className={styles.despesasPessoalInfoItem}>
             <span className={styles.despesasPessoalInfoLabel}>
-              FOLHA DE PAGAMENTO
+              COMISSÃO GESTÃO
             </span>
             <br />
-            {folhaPagamento !== null ? formatBRL(folhaPagamento) : '---'}
-          </div>
-          <div className={styles.despesasPessoalInfoItem}>
-            <span className={styles.despesasPessoalInfoLabel}>
-              COMISSÃO FOLHA
-            </span>
-            <br />
-            {comissaoFolha !== null ? formatBRL(comissaoFolha) : '---'}
+            {comissaoGestor !== null ? formatBRL(comissaoGestor) : '---'}
           </div>
           <div className={styles.despesasPessoalInfoItem}>
             <span className={styles.despesasPessoalInfoLabel}>
@@ -873,48 +1063,50 @@ export default function Page() {
           </div>
         </div>
       </div>
-      {selectedSection === 2 && (
-        <div className={styles.closingSalesContainer}>
-          <h4 className={styles.closingSalesTitle}><PercentBadgeIcon width={20} height={20} /> Fechamento Vendas</h4>
-          <div className={styles.closingSalesCardsContainer}>
-            <div className={styles.closingSalesCard}>
-              <p>
-                <span>Fixo</span>
-                <br />
-                {vendaValorFixo !== null ? formatBRL(vendaValorFixo) : '---'}
-              </p>
-            </div>
-            <div className={styles.closingSalesCard}>
-              <p>
-                <span>Variável</span>
-                <br />
-                {vendaVariavel !== null ? formatBRL(vendaVariavel) : '---'}
-              </p>
-            </div>
-            <div className={styles.closingSalesCard}>
-              <p>
-                <span>Margem de Contribuição</span>
-                <br />
-                {margemContribuicao !== null ? formatBRL(margemContribuicao) : '---'}
-              </p>
-            </div>
-            <div className={styles.closingSalesCard}>
-              <p>
-                <span>MC em %</span>
-                <br />
-                {margemContribuicaoPorcento !== null ? (margemContribuicaoPorcento * 100).toFixed(2) + '%' : '---'}
-              </p>
-            </div>
-            <div className={styles.closingSalesCard}>
-              <p>
-                <span>Ponto de Equilíbrio</span>
-                <br />
-                {pontoEquilibrio !== null ? formatBRL(pontoEquilibrio) : '---'}
-              </p>
+      {
+        selectedSection === 2 && (
+          <div className={styles.closingSalesContainer}>
+            <h4 className={styles.closingSalesTitle}><PercentBadgeIcon width={20} height={20} /> Fechamento Vendas</h4>
+            <div className={styles.closingSalesCardsContainer}>
+              <div className={styles.closingSalesCard}>
+                <p>
+                  <span>Fixo</span>
+                  <br />
+                  {vendaValorFixo !== null ? formatBRL(vendaValorFixo) : '---'}
+                </p>
+              </div>
+              <div className={styles.closingSalesCard}>
+                <p>
+                  <span>Variável</span>
+                  <br />
+                  {vendaVariavel !== null ? formatBRL(vendaVariavel) : '---'}
+                </p>
+              </div>
+              <div className={styles.closingSalesCard}>
+                <p>
+                  <span>Margem de Contribuição</span>
+                  <br />
+                  {margemContribuicao !== null ? formatBRL(margemContribuicao) : '---'}
+                </p>
+              </div>
+              <div className={styles.closingSalesCard}>
+                <p>
+                  <span>MC em %</span>
+                  <br />
+                  {margemContribuicaoPorcento !== null ? (margemContribuicaoPorcento * 100).toFixed(2) + '%' : '---'}
+                </p>
+              </div>
+              <div className={styles.closingSalesCard}>
+                <p>
+                  <span>Ponto de Equilíbrio</span>
+                  <br />
+                  {pontoEquilibrio !== null ? formatBRL(pontoEquilibrio) : '---'}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
 
       <div className={styles.despesasNormaisInfoContainer}>
@@ -957,11 +1149,11 @@ export default function Page() {
         <div className={`${styles.despesasNormaisInfoItem} ${styles.cardFundoReserva}`}>
           <p className={styles.despesasNormaisInfoText}>
             <span className={styles.despesasNormaisInfoLabel} style={{ fontSize: 12, color: '#888' }}>
-              FUNDO DE RESERVA
+              FUNDO DE INOVAÇÃO
             </span>
             <br />
-            {receitaLiquida !== null && totalDespesas !== null
-              ? formatBRL((receitaLiquida * 0.5) / 100)
+            {receitaLiquida !== null
+              ? formatBRL(receitaLiquida * 0.05)
               : '---'}
           </p>
           <div className={styles.despesasNormaisInfoIcon}>
@@ -969,8 +1161,59 @@ export default function Page() {
           </div>
         </div>
       </div>
+      <div className={styles.financialPageHeader}>
+        <h2
+          className={styles.financialPageTitle}
+          style={{ fontSize: '20px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '5px' }}>
+          <CalendarDaysIcon width={20} height={20} />
+          Dados Anuais
+        </h2>
+      </div>
       <div className={styles.annualInfoContainer}>
-        <h2 className={styles.chartTitle}><CurrencyDollarIcon width={20} height={20} /> Receita Financeira - Resultados Anuais</h2>
+        <h2 className={styles.chartTitle}><PresentationChartLineIcon width={20} height={20} /> Storytelling Baggio</h2>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart
+            data={annualStackedData}
+            margin={{ top: 20, right: 30, left: 20, bottom: 0 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="year" tick={{ fontSize: 10 }} interval={2} />
+            <YAxis yAxisId="left" hide tickFormatter={(val) => `R$${(val / 1000).toFixed(0)}k`} width={80} />
+            <YAxis yAxisId="right" orientation="right" hide tickFormatter={(val) => `R$${(val / 1000).toFixed(0)}k`} width={80} />
+            <Tooltip formatter={(value: number) => formatBRL(value)} />
+            <Legend />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="receitaBruta"
+              name="Receita Bruta"
+              stroke="#00a63e"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+            />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="despesas"
+              name="Despesas"
+              stroke="#e7000b"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="retirada"
+              name="Retirada"
+              stroke="#155dfc"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className={styles.annualInfoContainer}>
+        <h2 className={styles.chartTitle}><CurrencyDollarIcon width={20} height={20} /> Receita Financeira</h2>
         <div className={styles.chartWrapper}>
           <ResponsiveContainer width="100%" height={400}>
             <LineChart data={fiveYearData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -990,7 +1233,7 @@ export default function Page() {
       </div>
       <div className={styles.annualClosingDataContainer}>
         <div className={styles.annualClosingDataTitle}>
-          <h4 className={styles.annualClosingDataTitleText}><BriefcaseIcon width={20} height={20} /> Dados do Fechamento Anual</h4>
+          <h4 className={styles.annualClosingDataTitleText}><BriefcaseIcon width={20} height={20} /> Dados do Fechamento</h4>
           <button onClick={exportToExcel} className={styles.annualClosingDataExportButton}>
             <TableCellsIcon width={20} height={20} /> Exportar para Excel
           </button>
@@ -1045,6 +1288,6 @@ export default function Page() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

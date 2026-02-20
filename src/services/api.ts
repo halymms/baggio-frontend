@@ -51,6 +51,28 @@ export async function upsertMonthlyClosing(data: {
   return res;
 }
 
+// Buscar dados da comissão de gestores
+export async function getManagerCommission(mes: number, ano: number) {
+  const res = await fetch(`${API_URL}/api/properfy/manager-commission?mes=${mes}&ano=${ano}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+// Cadastrar/atualizar comissão de gestores
+export async function upsertManagerCommission(data: {
+  mes: number;
+  ano: number;
+  comissao_gestor: number;
+  observacao?: string;
+}) {
+  const res = await fetch(`${API_URL}/api/properfy/manager-commission`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res;
+}
+
 export async function openFinancialStatement(data: any) {
   const res = await fetch(`${API_URL}/api/properfy/open-financial-statement`, {
     method: 'POST',

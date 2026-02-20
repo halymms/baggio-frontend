@@ -2,7 +2,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link'
-import { realtimeReportData, getItemData, upsertItemData, getMonthlyClosing, upsertMonthlyClosing } from '@/services/api';
+import { realtimeReportData, getItemData, upsertItemData, getMonthlyClosing, upsertMonthlyClosing, getManagerCommission, upsertManagerCommission } from '@/services/api';
 import { PencilIcon, DocumentCheckIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 
 import styles from './reports.module.scss';
@@ -129,6 +129,11 @@ export default function Page() {
   const [observacaoGeral, setObservacaoGeral] = useState<string>("");
   const [isEditingClosing, setIsEditingClosing] = useState<boolean>(false);
 
+  // States for manager commission
+  const [comissaoGestor, setComissaoGestor] = useState<string>("");
+  const [observacaoGestor, setObservacaoGestor] = useState<string>("");
+  const [isEditingManagerCommission, setIsEditingManagerCommission] = useState<boolean>(false);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
@@ -164,6 +169,31 @@ export default function Page() {
     } catch (e) {
       console.error(e);
       alert('Erro ao salvar dados do fechamento.');
+    }
+  };
+
+  const handleSaveManagerCommission = async () => {
+    if (!month || !year) return;
+    try {
+      const dataManagerCommission = {
+        mes: Number(month),
+        ano: Number(year),
+        comissao_gestor: parseCurrency(comissaoGestor),
+        observacao: observacaoGestor
+      };
+      console.log('Salvando comissão de gestores:', dataManagerCommission);
+      const res = await upsertManagerCommission(dataManagerCommission);
+      if (res.ok) {
+        alert('Comissão de gestores salva com sucesso!');
+        setIsEditingManagerCommission(false);
+      } else {
+        const errorText = await res.text();
+        console.error('Erro ao salvar:', res.status, errorText);
+        alert(`Erro ao salvar comissão de gestores (${res.status}): ${errorText}`);
+      }
+    } catch (e) {
+      console.error('Exceção ao salvar comissão:', e);
+      alert(`Erro ao salvar comissão de gestores: ${e}`);
     }
   };
 
@@ -272,6 +302,36 @@ export default function Page() {
           setComissoesReceberProxMes("");
           setObservacaoGeral("");
           setIsEditingClosing(true);
+        }
+      }
+    });
+
+    return () => { isMounted = false; };
+  }, [month, year]);
+
+  // Load manager commission data
+  useEffect(() => {
+    if (!month || !year) return;
+    let isMounted = true;
+    const mesNum = Number(month);
+    const anoNum = Number(year);
+
+    getManagerCommission(mesNum, anoNum).then(data => {
+      if (isMounted) {
+        const hasData = data && (
+          data.comissao_gestor !== null && data.comissao_gestor !== undefined ||
+          (data.observacao && data.observacao.trim() !== '')
+        );
+
+        if (hasData) {
+          setComissaoGestor(data.comissao_gestor ? formatCurrency(data.comissao_gestor) : "");
+          setObservacaoGestor(data.observacao || "");
+          setIsEditingManagerCommission(false);
+        } else {
+          // Reset if no data found and enable edit mode
+          setComissaoGestor("");
+          setObservacaoGestor("");
+          setIsEditingManagerCommission(true);
         }
       }
     });
@@ -401,6 +461,73 @@ export default function Page() {
                 <button
                   className={styles.commissionEditButton}
                   onClick={() => setIsEditingClosing(true)}
+                >
+                  <PencilIcon width={16} height={16} /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manager Commission Section */}
+      {month && year && selectedSection == 2 && (
+        <div className={styles.commissionContainer}>
+          <h3 className={styles.commissionTitle}>Comissão de Gestores</h3>
+          <div className={styles.commissionEditContainer}>
+            <div className={styles.commissionEditItem}>
+              <label>Comissão Gestor</label>
+              {isEditingManagerCommission ? (
+                <input
+                  type="text"
+                  value={comissaoGestor}
+                  onChange={(e) => {
+                    handleCurrencyChange(e.target.value, setComissaoGestor)
+                    setIsEditingManagerCommission(true)
+                  }}
+                  placeholder="R$ 0,00"
+                />
+              ) : (
+                <div className={styles.commissionValue}>
+                  {comissaoGestor || '-'}
+                </div>
+              )}
+            </div>
+            <div className={styles.commissionEditItem} style={{ gridColumn: '1 / -1' }}>
+              <label>Observação</label>
+              {isEditingManagerCommission ? (
+                <textarea
+                  className={styles.commissionEditItemTextArea}
+                  value={observacaoGestor}
+                  onChange={(e) => setObservacaoGestor(e.target.value)}
+                  placeholder="Observações sobre a comissão..."
+                />
+              ) : (
+                <div className={styles.commissionValue}>
+                  {observacaoGestor || '-'}
+                </div>
+              )}
+            </div>
+            <div className={styles.commissionActionsContainer}>
+              {isEditingManagerCommission ? (
+                <div className={styles.commissionActionsContent}>
+                  <button
+                    className={styles.commissionSaveButton}
+                    onClick={handleSaveManagerCommission}
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    className={styles.commissionCancelButton}
+                    onClick={() => setIsEditingManagerCommission(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className={styles.commissionEditButton}
+                  onClick={() => setIsEditingManagerCommission(true)}
                 >
                   <PencilIcon width={16} height={16} /> Editar
                 </button>

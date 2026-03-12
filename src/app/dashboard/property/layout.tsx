@@ -3,15 +3,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 }
 
 
-// - DADOS APRESENTADOS COM FILTRO DE MÊS A MÊS (Ativos) -
-// Garantia - pizza com os tipos de garantia
+// - DADOS APRESENTADOS COM FILTRO DE MÊS A MÊS (Ativos) -/
+// Garantia - pizza com os tipos de garantia - OK
 // Seguradora - pizza com os tipos de seguradora
-// FCI % - Pizza com quais imóveis tem e não tem FCI
-// Data ultimo reajuste - Gráfico de Linha  - Quantos imóveis reajustaram em cada mês
+// FCI % - Pizza com quais imóveis tem e não tem FCI - OK
+// Data ultimo reajuste - Gráfico de Linha  - Quantos imóveis reajustaram em cada mês - OK
 // Bairro do imóvel - Coluna  - com a proporção dos 8 bairros com mais imóveis.
 // Cidade - com a proporção dos 5 bairros com mais imóveis.
-// Tipo - pizza com os tipos de imóvel 
-// Imóvel Residencial ou comercial - pizza 
+// Tipo - pizza com os tipos de imóvel - OK
+// Imóvel Residencial ou comercial - pizza - OK
 
 // - RESCINDIDOS -
 // Motivo da Rescisão - Coluna com os motivos 

@@ -33,6 +33,24 @@ export function usePropertyApi() {
         return res.json();
     };
 
+    const removedPropertyReport = async (month: number, year: number) => {
+        const lastDay = new Date(year, month, 0).getDate();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const start = `${year}-${pad(month)}-01`;
+        const end = `${year}-${pad(month)}-${pad(lastDay)}`;
+
+        const res = await fetch(`${API_URL}/api/property/property/report/list`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                activeContract: ['INACTIVE'],
+                chrStatus: ['REMOVED'],
+                dteTermination: [start, end],
+            })
+        });
+        return res.json();
+    };
+
     const rentalContractOptions = async () => {
         const res = await fetch(`${API_URL}/api/rental/contract/options`, {
             method: 'GET',
@@ -44,6 +62,7 @@ export function usePropertyApi() {
     return {
         rentalContractReportList,
         terminatedContractReport,
+        removedPropertyReport,
         rentalContractOptions,
     }
 }

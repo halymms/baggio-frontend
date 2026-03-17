@@ -95,6 +95,7 @@
     .chartsGrid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-flow: dense;
         gap: 24px;
         margin-bottom: 24px;
 
@@ -114,6 +115,15 @@
 
         &.chartCardFull {
             grid-column: 1 / -1;
+        }
+
+        &.chartCardTallRight {
+            grid-column: 2;
+            grid-row: span 2;
+        }
+
+        &.chartCardLeft {
+            grid-column: 1;
         }
 
         .chartHeader {

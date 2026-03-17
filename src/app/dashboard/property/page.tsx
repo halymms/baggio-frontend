@@ -28,11 +28,12 @@ function buildLookup(options: Options, key: string): Record<string, string> {
     return Object.fromEntries(items.map(({ value, text }) => [value, text]));
 }
 
-function sumValues(obj: Record<string, number>): number {
+function sumValues(obj: Record<string, number> | null | undefined): number {
+    if (!obj) return 0;
     return Object.values(obj).reduce((acc, v) => acc + v, 0);
 }
 
-type Tab = 'ativos' | 'reajustados' | 'rescindidos';
+type Tab = 'ativos' | 'rescindidos' | 'baixados';
 
 export default function Page() {
     const now = new Date();
@@ -40,13 +41,16 @@ export default function Page() {
     const [year, setYear] = useState(now.getFullYear());
     const [terminatedMonth, setTerminatedMonth] = useState(now.getMonth() + 1);
     const [terminatedYear, setTerminatedYear] = useState(now.getFullYear());
+    const [removedMonth, setRemovedMonth] = useState(now.getMonth() + 1);
+    const [removedYear, setRemovedYear] = useState(now.getFullYear());
 
     const [data, setData] = useState<Record<string, unknown>>();
     const [terminatedData, setTerminatedData] = useState<Record<string, unknown>>();
+    const [removedData, setRemovedData] = useState<Record<string, unknown>>();
     const [options, setOptions] = useState<Options>({});
     const [activeTab, setActiveTab] = useState<Tab>('ativos');
 
-    const { rentalContractReportList, terminatedContractReport, rentalContractOptions } = usePropertyApi();
+    const { rentalContractReportList, terminatedContractReport, removedPropertyReport, rentalContractOptions } = usePropertyApi();
 
     useEffect(() => {
         rentalContractOptions().then(setOptions);
@@ -62,10 +66,16 @@ export default function Page() {
         terminatedContractReport(terminatedMonth, terminatedYear).then(setTerminatedData);
     }, [terminatedMonth, terminatedYear]);
 
+    useEffect(() => {
+        setRemovedData(undefined);
+        removedPropertyReport(removedMonth, removedYear).then(setRemovedData);
+    }, [removedMonth, removedYear]);
+
     const typeLabels = buildLookup(options, 'type');
     const guaranteeLabels = buildLookup(options, 'guarantee');
     const pcfLabels = buildLookup(options, 'pcf');
     const terminationReasonLabels = buildLookup(options, 'terminationReason');
+    const acquisitionTypeLabels = buildLookup(options, 'acquisitionTypes');
 
     const Filters = ({ monthVal, yearVal, onMonth, onYear }: {
         monthVal: number;
@@ -107,16 +117,16 @@ export default function Page() {
                     Contratos Ativos
                 </button>
                 <button
-                    className={`${styles.tabButton} ${activeTab === 'reajustados' ? styles.tabButtonActive : ''}`}
-                    onClick={() => setActiveTab('reajustados')}
-                >
-                    Contratos Reajustados
-                </button>
-                <button
                     className={`${styles.tabButton} ${activeTab === 'rescindidos' ? styles.tabButtonActive : ''}`}
                     onClick={() => setActiveTab('rescindidos')}
                 >
                     Contratos Rescindidos
+                </button>
+                <button
+                    className={`${styles.tabButton} ${activeTab === 'baixados' ? styles.tabButtonActive : ''}`}
+                    onClick={() => setActiveTab('baixados')}
+                >
+                    Imóveis Baixados
                 </button>
             </div>
 
@@ -239,9 +249,97 @@ export default function Page() {
                 </div>
             )}
 
-            {activeTab === 'reajustados' && (
-                <div className={styles.tabContent}>
-                    <p>Conteúdo de Contratos Reajustados</p>
+            {activeTab === 'baixados' && (
+                <div className={styles.chartsGrid}>
+                    <Filters monthVal={removedMonth} yearVal={removedYear} onMonth={setRemovedMonth} onYear={setRemovedYear} />
+                    {removedData && (
+                        <>
+                            <div className={`${styles.chartCard} ${styles.chartCardLeft}`}>
+                                <div className={styles.chartHeader}>
+                                    <p className={styles.chartTitle}>Status</p>
+                                    <span className={styles.chartTotal}>{sumValues(removedData.status as Record<string, number>)}</span>
+                                </div>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={Object.entries((removedData.status ?? {}) as Record<string, number>).map(([key, value]) => ({
+                                                name: acquisitionTypeLabels[key] ?? key,
+                                                value
+                                            }))}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={100}
+                                            label
+                                        >
+                                            {Object.entries((removedData.status ?? {}) as Record<string, number>).map((_, index) => (
+                                                <Cell key={index} fill={COLORS_TYPE[index % COLORS_TYPE.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className={`${styles.chartCard} ${styles.chartCardTallRight}`}>
+                                <div className={styles.chartHeader}>
+                                    <p className={styles.chartTitle}>Motivo da Baixa</p>
+                                    <span className={styles.chartTotal}>{sumValues(removedData.terminationReasons as Record<string, number>)}</span>
+                                </div>
+                                <ResponsiveContainer width="100%" height={600}>
+                                    <PieChart>
+                                        <Pie
+                                            data={Object.entries((removedData.terminationReasons ?? {}) as Record<string, number>).map(([key, value]) => ({
+                                                name: terminationReasonLabels[key] ?? key,
+                                                value
+                                            }))}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={100}
+                                            label
+                                        >
+                                            {Object.entries((removedData.terminationReasons ?? {}) as Record<string, number>).map((_, index) => (
+                                                <Cell key={index} fill={COLORS_TERMINATION[index % COLORS_TERMINATION.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className={`${styles.chartCard} ${styles.chartCardLeft}`}>
+                                <div className={styles.chartHeader}>
+                                    <p className={styles.chartTitle}>Tipo de Angariação</p>
+                                    <span className={styles.chartTotal}>{sumValues(removedData.listingTypes as Record<string, number>)}</span>
+                                </div>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={Object.entries((removedData.listingTypes ?? {}) as Record<string, number>).map(([key, value]) => ({
+                                                name: key,
+                                                value
+                                            }))}
+                                            dataKey="value"
+                                            nameKey="name"
+                                            cx="50%"
+                                            cy="50%"
+                                            outerRadius={100}
+                                            label
+                                        >
+                                            {Object.entries((removedData.listingTypes ?? {}) as Record<string, number>).map((_, index) => (
+                                                <Cell key={index} fill={COLORS_GUARANTEE[index % COLORS_GUARANTEE.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                        <Legend />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 

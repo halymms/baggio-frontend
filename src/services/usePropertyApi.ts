@@ -51,6 +51,16 @@ export function usePropertyApi() {
         return res.json();
     };
 
+    const activeContractCount = async (): Promise<number> => {
+        const res = await fetch(`${API_URL}/api/property/property/report/list`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ activeContract: ['ACTIVE'] })
+        });
+        const data = await res.json();
+        return Array.isArray(data.data) ? data.data.length : 0;
+    };
+
     const rentalContractOptions = async () => {
         const res = await fetch(`${API_URL}/api/rental/contract/options`, {
             method: 'GET',
@@ -64,5 +74,6 @@ export function usePropertyApi() {
         terminatedContractReport,
         removedPropertyReport,
         rentalContractOptions,
+        activeContractCount,
     }
 }

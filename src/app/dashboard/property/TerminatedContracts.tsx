@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import styles from './property.module.scss';
 import { usePropertyApi } from "@/services/usePropertyApi";
-import { buildLookup, COLORS_GUARANTEE, COLORS_TERMINATION, Filters, Options, sumValues } from "./_shared";
+import { buildLookup, COLORS_GUARANTEE, COLORS_TERMINATION, COLORS_TYPE, Filters, Options, sumValues } from "./_shared";
 
 const now = new Date();
 
@@ -21,6 +21,7 @@ export function TerminatedContracts({ options }: { options: Options }) {
 
     const guaranteeLabels = buildLookup(options, 'guarantee');
     const terminationReasonLabels = buildLookup(options, 'terminationReason');
+    const typeLabels = buildLookup(options, 'type');
 
     return (
         <div className={styles.chartsGrid}>
@@ -48,6 +49,34 @@ export function TerminatedContracts({ options }: { options: Options }) {
                                 >
                                     {Object.entries(data.guarantees as Record<string, number>).map((_, index) => (
                                         <Cell key={index} fill={COLORS_GUARANTEE[index % COLORS_GUARANTEE.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className={styles.chartCard}>
+                        <div className={styles.chartHeader}>
+                            <p className={styles.chartTitle}>Tipo de Imóvel</p>
+                            <span className={styles.chartTotal}>{sumValues(data.contractType as Record<string, number>)}</span>
+                        </div>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={Object.entries((data.contractType ?? {}) as Record<string, number>).map(([key, value]) => ({
+                                        name: typeLabels[key] ?? key,
+                                        value
+                                    }))}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={100}
+                                    label
+                                >
+                                    {Object.entries((data.contractType ?? {}) as Record<string, number>).map((_, index) => (
+                                        <Cell key={index} fill={COLORS_TYPE[index % COLORS_TYPE.length]} />
                                     ))}
                                 </Pie>
                                 <Tooltip />

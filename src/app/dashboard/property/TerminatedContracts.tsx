@@ -26,7 +26,19 @@ export function TerminatedContracts({ options }: { options: Options }) {
     return (
         <div className={styles.chartsGrid}>
             <Filters monthVal={month} yearVal={year} onMonth={setMonth} onYear={setYear} />
-            {data && (
+            {!data ? (
+                <>
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className={styles.skeletonCard}>
+                            <div className={styles.skeletonHeader}>
+                                <div className={styles.skeletonBlock} style={{ width: '40%', height: 16 }} />
+                                <div className={styles.skeletonBlock} style={{ width: 40, height: 24 }} />
+                            </div>
+                            <div className={styles.skeletonBlock} style={{ width: '100%', height: 300, borderRadius: 8 }} />
+                        </div>
+                    ))}
+                </>
+            ) : (
                 <>
                     <div className={styles.chartCard}>
                         <div className={styles.chartHeader}>

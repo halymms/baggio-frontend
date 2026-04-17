@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:4000';
+const API_URL = 'https://baggio-api.onrender.com';
 
 // Buscar dados de um item para um mês/ano (inclui observacao)
 export async function getItemData(itemId: number, mes: number, ano: number) {
@@ -66,6 +66,28 @@ export async function upsertManagerCommission(data: {
   observacao?: string;
 }) {
   const res = await fetch(`${API_URL}/api/properfy/manager-commission`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res;
+}
+
+// Buscar dados do fundo de inovação
+export async function getInnovationFund(mes: number, ano: number) {
+  const res = await fetch(`${API_URL}/api/properfy/innovation-fund?mes=${mes}&ano=${ano}`);
+  if (!res.ok) return null;
+  return res.json();
+}
+
+// Cadastrar/atualizar fundo de inovação
+export async function upsertInnovationFund(data: {
+  mes: number;
+  ano: number;
+  fundo_inovacao: number;
+  observacao?: string;
+}) {
+  const res = await fetch(`${API_URL}/api/properfy/innovation-fund`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)

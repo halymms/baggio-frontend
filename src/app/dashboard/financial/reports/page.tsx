@@ -2,7 +2,7 @@
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link'
-import { realtimeReportData, getItemData, upsertItemData, getMonthlyClosing, upsertMonthlyClosing, getManagerCommission, upsertManagerCommission } from '@/services/api';
+import { realtimeReportData, getItemData, upsertItemData, getMonthlyClosing, upsertMonthlyClosing, getManagerCommission, upsertManagerCommission, getInnovationFund, upsertInnovationFund } from '@/services/api';
 import { PencilIcon, DocumentCheckIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 
 import styles from './reports.module.scss';
@@ -134,18 +134,39 @@ export default function Page() {
   const [observacaoGestor, setObservacaoGestor] = useState<string>("");
   const [isEditingManagerCommission, setIsEditingManagerCommission] = useState<boolean>(false);
 
+  // States for innovation fund
+  const [fundoInovacao, setFundoInovacao] = useState<string>("");
+  const [observacaoFundoInovacao, setObservacaoFundoInovacao] = useState<string>("");
+  const [isEditingInnovationFund, setIsEditingInnovationFund] = useState<boolean>(false);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
   const parseCurrency = (value: string) => {
+    const isNegative = value.includes('-');
     const raw = value.replaceAll(/[^\d]/g, "");
-    return Number(raw) / 100;
+    if (!raw) return 0;
+    const num = Number(raw) / 100;
+    return isNegative ? -num : num;
   };
 
   const handleCurrencyChange = (value: string, setter: (val: string) => void) => {
-    const num = parseCurrency(value);
-    setter(num ? formatCurrency(num) : "");
+    const isNegative = value.includes('-');
+    const raw = value.replaceAll(/[^\d]/g, "");
+    
+    if (!raw && !isNegative) {
+      setter("");
+      return;
+    }
+    
+    if (!raw && isNegative) {
+      setter("-");
+      return;
+    }
+    
+    const num = Number(raw) / 100;
+    setter(formatCurrency(isNegative ? -num : num));
   };
 
   const handleSaveClosing = async () => {
@@ -194,6 +215,30 @@ export default function Page() {
     } catch (e) {
       console.error('Exceção ao salvar comissão:', e);
       alert(`Erro ao salvar comissão de gestores: ${e}`);
+    }
+  };
+
+  const handleSaveInnovationFund = async () => {
+    if (!month || !year) return;
+    try {
+      const dataInnovationFund = {
+        mes: Number(month),
+        ano: Number(year),
+        fundo_inovacao: parseCurrency(fundoInovacao),
+        observacao: observacaoFundoInovacao
+      };
+      const res = await upsertInnovationFund(dataInnovationFund);
+      if (res.ok) {
+        alert('Fundo de inovação salvo com sucesso!');
+        setIsEditingInnovationFund(false);
+      } else {
+        const errorText = await res.text();
+        console.error('Erro ao salvar:', res.status, errorText);
+        alert(`Erro ao salvar fundo de inovação (${res.status}): ${errorText}`);
+      }
+    } catch (e) {
+      console.error('Exceção ao salvar fundo de inovação:', e);
+      alert(`Erro ao salvar fundo de inovação: ${e}`);
     }
   };
 
@@ -332,6 +377,35 @@ export default function Page() {
           setComissaoGestor("");
           setObservacaoGestor("");
           setIsEditingManagerCommission(true);
+        }
+      }
+    });
+
+    return () => { isMounted = false; };
+  }, [month, year]);
+
+  // Load innovation fund data
+  useEffect(() => {
+    if (!month || !year) return;
+    let isMounted = true;
+    const mesNum = Number(month);
+    const anoNum = Number(year);
+
+    getInnovationFund(mesNum, anoNum).then(data => {
+      if (isMounted) {
+        const hasData = data && (
+          data.fundo_inovacao !== null && data.fundo_inovacao !== undefined ||
+          (data.observacao && data.observacao.trim() !== '')
+        );
+
+        if (hasData) {
+          setFundoInovacao(data.fundo_inovacao ? formatCurrency(data.fundo_inovacao) : "");
+          setObservacaoFundoInovacao(data.observacao || "");
+          setIsEditingInnovationFund(false);
+        } else {
+          setFundoInovacao("");
+          setObservacaoFundoInovacao("");
+          setIsEditingInnovationFund(true);
         }
       }
     });
@@ -528,6 +602,73 @@ export default function Page() {
                 <button
                   className={styles.commissionEditButton}
                   onClick={() => setIsEditingManagerCommission(true)}
+                >
+                  <PencilIcon width={16} height={16} /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Innovation Fund Section */}
+      {month && year && selectedSection == 2 && (
+        <div className={styles.commissionContainer}>
+          <h3 className={styles.commissionTitle}>Fundo de Inovação</h3>
+          <div className={styles.commissionEditContainer}>
+            <div className={styles.commissionEditItem}>
+              <label>Fundo de Inovação</label>
+              {isEditingInnovationFund ? (
+                <input
+                  type="text"
+                  value={fundoInovacao}
+                  onChange={(e) => {
+                    handleCurrencyChange(e.target.value, setFundoInovacao);
+                    setIsEditingInnovationFund(true);
+                  }}
+                  placeholder="R$ 0,00"
+                />
+              ) : (
+                <div className={styles.commissionValue}>
+                  {fundoInovacao || '-'}
+                </div>
+              )}
+            </div>
+            <div className={styles.commissionEditItem} style={{ gridColumn: '1 / -1' }}>
+              <label>Observação</label>
+              {isEditingInnovationFund ? (
+                <textarea
+                  className={styles.commissionEditItemTextArea}
+                  value={observacaoFundoInovacao}
+                  onChange={(e) => setObservacaoFundoInovacao(e.target.value)}
+                  placeholder="Observações sobre o fundo de inovação..."
+                />
+              ) : (
+                <div className={styles.commissionValue}>
+                  {observacaoFundoInovacao || '-'}
+                </div>
+              )}
+            </div>
+            <div className={styles.commissionActionsContainer}>
+              {isEditingInnovationFund ? (
+                <div className={styles.commissionActionsContent}>
+                  <button
+                    className={styles.commissionSaveButton}
+                    onClick={handleSaveInnovationFund}
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    className={styles.commissionCancelButton}
+                    onClick={() => setIsEditingInnovationFund(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className={styles.commissionEditButton}
+                  onClick={() => setIsEditingInnovationFund(true)}
                 >
                   <PencilIcon width={16} height={16} /> Editar
                 </button>

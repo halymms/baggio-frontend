@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import Link from "next/link";
-import { realtimeReportData, getMonthlyClosing, getManagerCommission } from "@/services/api";
+import { realtimeReportData, getMonthlyClosing, getManagerCommission, getInnovationFund } from "@/services/api";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 import {
@@ -67,6 +67,7 @@ export default function SalesPage() {
         despesasNormais: number | null,
         receitaLiquida: number | null,
         fundoDeReserva: number | null,
+        fundoInovacaoFetched: number | null,
         resultadoLiquido: number | null,
         folhaPagamento: number | null,
         investimentos: number | null,
@@ -94,7 +95,7 @@ export default function SalesPage() {
             'Despesas com Pessoal': row.totalDespesasPessoal ?? '',
             'Despesas Normais': row.despesasNormais ?? '',
             'Receita Liquida': row.receitaLiquida ?? '',
-            'Fundo de Inovação 5%': row.fundoDeReserva ?? '',
+            'Fundo de Inovação 5%': row.fundoInovacaoFetched ?? '',
             'Fundo de Reserva 5%': row.fundoDeReserva ?? '',
             'Resultado Líquido': row.resultadoLiquido ?? '',
             'Folha de Pagamento': row.folhaPagamento ?? '',
@@ -145,6 +146,7 @@ export default function SalesPage() {
     const [despesasMenosCorretagem, setDespesasMenosCorretagem] = useState<number | null>(null);
     const [proLaboreData, setProLaboreData] = useState<number | null>(null);
     const [comissaoGestorFetched, setComissaoGestorFetched] = useState<number | null>(null);
+    const [fundoInovacaoFetched, setFundoInovacaoFetched] = useState<number | null>(null);
 
     // States related to Vendas (can be kept or removed if not used)
     const [vendaValorFixo, setVendaValorFixo] = useState<number>(0);
@@ -158,7 +160,6 @@ export default function SalesPage() {
     const [retirada, setRetirada] = useState<number>(0);
     const [customIndexes, setCustomIndexes] = useState<string[]>([]);
     const [customInput, setCustomInput] = useState("");
-    const [fundoInovacao, setFundoInovacao] = useState<number>(0);
     const [customValues, setCustomValues] = useState<Array<{ amount: number | null, service: string | null }>>([
         { amount: null, service: null },
         { amount: null, service: null },
@@ -207,6 +208,18 @@ export default function SalesPage() {
         }).catch(err => {
             console.error("Error fetching manager commission", err);
             setComissaoGestorFetched(null);
+        });
+
+        // Fetch Innovation Fund
+        getInnovationFund(mesNum, anoNum).then(data => {
+            if (data && data.fundo_inovacao !== null && data.fundo_inovacao !== undefined) {
+                setFundoInovacaoFetched(Number(data.fundo_inovacao));
+            } else {
+                setFundoInovacaoFetched(null);
+            }
+        }).catch(err => {
+            console.error("Error fetching innovation fund", err);
+            setFundoInovacaoFetched(null);
         });
     }, [queryMonth, queryYear]);
 
@@ -278,16 +291,16 @@ export default function SalesPage() {
                 const doacoes = getAmount("1.2.1.12");
                 const prejuizos = getAmount("1.2.8");
                 const bens = getAmount("1.2.9.2");
-                const direitos = getAmount("1.2.9.3");
+                const comissaoDecorrenteVendaImoveis = getAmount("1.2.2.4");
                 const investimentosVals = getAmount("1.2.9.4");
                 const comissaoVendaEfetuada = getAmount("1.2.2.4.4");
                 // const assinaturas = getAmount("1.2.1.15");
                 const jurosPagos = getAmount("1.2.3.2");
-                const reformas = getAmount("1.2.9.1");
+                const prejuizoVendas = getAmount("1.2.8.1.2");
                 const taxas = getAmount("1.2.4.3");
 
                 const despesasNormaisCalc = (
-                    // despesasGerais (1.2.1.1) removed
+                    despesasGerais +
                     telefones
                     + entidadesDeClasses
                     + materiais
@@ -309,9 +322,8 @@ export default function SalesPage() {
                     + impostosData
                     + prejuizos // 1.2.8
                     + bens // 1.2.9.2
-                    + direitos // 1.2.9.3
-                    + investimentosVals // 1.2.9.4
                     + taxas // 1.2.4.3
+                    + prejuizoVendas
                 );
 
                 setDespesasNormais(despesasNormaisCalc);
@@ -324,7 +336,8 @@ export default function SalesPage() {
                 const totalDespesasPessoalExtrasCalc = primeiroCalcDespesaPessoalExtra - Math.abs(proLabore) - Math.abs(salarios);
                 setTotalDespesasPessoalExtras(totalDespesasPessoalExtrasCalc);
 
-                const totalDespesasPessoalCalc = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(gratificacoesPremiacoes) + Math.abs(comissaoLocacaoImoveis) + Math.abs(ajudaDeCusto) - Math.abs(proLabore);
+                console.log("folha e pessoal- folhaPagamento:", folhaPagamento, "outrasDespesasPessoal:", outrasDespesasPessoal, "comissaoDecorrenteVendaImoveis:", comissaoDecorrenteVendaImoveis, "gratificacoesPremiacoes:", gratificacoesPremiacoes, "proLabore:", proLabore, "comissaoVendaEfetuada:", comissaoVendaEfetuada)
+                const totalDespesasPessoalCalc = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(comissaoDecorrenteVendaImoveis) + Math.abs(comissaoLocacaoImoveis) + Math.abs(gratificacoesPremiacoes) - Math.abs(proLabore) - Math.abs(comissaoVendaEfetuada);
                 setTotalDespesasPessoal(totalDespesasPessoalCalc);
 
                 let comissaoFolhaCalc = 0;
@@ -337,7 +350,8 @@ export default function SalesPage() {
 
                 let receitaLiquidaCalc = 0;
                 if (totalDespesasPessoalExtrasCalc && despesasNormaisCalc) {
-                    receitaLiquidaCalc = Math.abs(receita?.amount ?? 0) - Math.abs(despesasNormaisCalc);
+                    receitaLiquidaCalc = Math.abs(receita?.amount ?? 0) - Math.abs(despesasNormaisCalc) - Math.abs(totalDespesasPessoalCalc);
+                    console.log("receita bruta: ", receita?.amount, "despesas normais: ", Math.abs(despesasNormaisCalc), "total despesas pessoal: ", totalDespesasPessoalCalc);
                     setReceitaLiquida(receitaLiquidaCalc);
                 }
 
@@ -347,15 +361,10 @@ export default function SalesPage() {
                     setFundoDeReserva(fundoDeReservaCalc);
                 }
 
-                let fundoInovacaoCalc = 0;
-                if (receitaLiquidaCalc) {
-                    fundoInovacaoCalc = receitaLiquidaCalc * 0.10; // Fixed for Vendas
-                    setFundoInovacao(fundoInovacaoCalc);
-                }
-
                 let resultadoLiquidoCalc = 0;
-                if (receitaLiquidaCalc) {
-                    resultadoLiquidoCalc = Number(receitaLiquidaCalc) - Number(fundoInovacaoCalc);
+                if (receitaLiquidaCalc && corretores && fundoInovacaoFetched) {
+                    resultadoLiquidoCalc = Math.abs(receitaLiquidaCalc) - Math.abs(corretores) - Number(fundoInovacaoFetched);
+                    console.log("receita liquida: ", receitaLiquidaCalc, "corretores: ", corretores, "fundo inovacao: ", fundoInovacaoFetched);
                     setResultadoLiquido(resultadoLiquidoCalc);
                 }
 
@@ -370,44 +379,37 @@ export default function SalesPage() {
                     setLucroLiquido(lucroLiquidoCalc);
                 }
 
-                if (folhaPagamento || despesasNormaisCalc || impostosData) {
-                    const resultadoFixo = Math.abs(despesasNormaisCalc ?? 0) - Math.abs(impostosData ?? 0) + Math.abs(folhaPagamento ?? 0);
+                let resultadoFixo = 0;
+                if (despesasNormais || impostos || totalDespesasPessoal) {
+                    console.log("calculo fixo: ", despesasNormais, impostos, totalDespesasPessoal);
+                    resultadoFixo = Math.abs(despesasNormaisCalc ?? 0) - Math.abs(impostosData ?? 0) + Math.abs(totalDespesasPessoalCalc ?? 0);
                     setVendaValorFixo(resultadoFixo);
                 }
 
+                let currentComissaoGestor: number | null = null;
                 if (comissaoGestorFetched !== null) {
-                    setComissaoGestor(comissaoGestorFetched);
-                } else if (lucroLiquido) {
-                    console.log("Lucro Liquido", lucroLiquido);
-                    setComissaoGestor(lucroLiquido * 0.208);
+                    currentComissaoGestor = comissaoGestorFetched;
                 }
+                setComissaoGestor(currentComissaoGestor);
+
                 if (comissaoFolha && salarios) {
                     const calculoFolhaPagamentoCalc = Math.abs(comissaoFolha) + Math.abs(salarios);
                     setCalculoFolhaPagamento(calculoFolhaPagamentoCalc);
                 }
-                // Removed section 2 check
-                if (receitaLiquida) {
-                    setFundoInovacao(receitaLiquida * 0.10);
-                }
 
-                if (impostos || fundoInovacao || comissoesReceber || comissaoVendaEfetuada) {
-                    const resultadoVariavel = Math.abs(impostos) + Math.abs(fundoInovacao) + Math.abs(comissaoVendaEfetuada) + Math.abs(comissoesReceber);
+                if (impostos || fundoInovacaoFetched || currentComissaoGestor || comissaoVendaEfetuada) {
+                    console.log("impostos", impostos, "comissaoGestor", currentComissaoGestor, "comissaoVendaEfetuada", comissaoVendaEfetuada);
+                    const resultadoVariavel = Math.abs(impostos) + Math.abs(comissaoVendaEfetuada) + Math.abs(currentComissaoGestor ?? 0);
                     setVendaVariavel(resultadoVariavel);
                 }
-                if (receitaBruta && totalDespesas) {
-                    setMargemContribuicao(Math.abs(receitaBruta) + Math.abs(totalDespesas));
-                }
-                if (margemContribuicao && receitaBruta) {
-                    const resultadoMC = margemContribuicao / receitaBruta;
-                    setMargemContribuicaoPorcento(resultadoMC);
-                }
-                if (vendaValorFixo && margemContribuicaoPorcento) {
-                    const resultadoMV = -vendaValorFixo / margemContribuicaoPorcento;
-                    setPontoEquilibrio(resultadoMV);
+                let margemContribuicaoCalculo = Math.abs(receitaBruta ?? 0) - Math.abs(vendaVariavel ?? 0);
+                if (margemContribuicaoCalculo) {
+                    setMargemContribuicao(margemContribuicaoCalculo ?? 0);
                 }
 
-                if (resultadoLiquido || calculoFolhaPagamento || investimentosVals || comissaoGestor) {
-                    const retiradaCalc = (resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentosVals ?? 0) - Math.abs(comissaoGestor ?? 0);
+                if (resultadoLiquido || calculoFolhaPagamento || investimentosVals || currentComissaoGestor) {
+                    const retiradaCalc = (resultadoLiquido ?? 0) - Math.abs(currentComissaoGestor ?? 0);
+                    console.log("resultado liquido: ", resultadoLiquido, "comissao gestor: ", currentComissaoGestor);
                     setRetirada(retiradaCalc);
                 }
                 if (receitaBruta && retirada) {
@@ -415,9 +417,9 @@ export default function SalesPage() {
                     setPorcentagemRetirada(porcentagemRetiradaCalc);
                 }
                 if (despesa || totalDespesasPessoal) {
-                    console.log("Despesa", despesa);
-                    const totalDespesaCalc = Math.abs(despesa.amount ?? 0);
-                    setTotalDespesas(totalDespesaCalc);
+                    const totalDespesaCalc = Math.abs(totalDespesasPessoalCalc ?? 0) + Math.abs(corretores ?? 0) + Math.abs(despesasNormais ?? 0) + Number(fundoInovacaoFetched) + Math.abs(comissaoGestor ?? 0);
+                    console.log("total despesas pessoal: ", Math.abs(totalDespesasPessoalCalc ?? 0), "corretores: ", Math.abs(corretores ?? 0), "despesas normais: ", Math.abs(despesasNormais ?? 0), "fundo de inovação: ", Number(fundoInovacaoFetched), "comissão gestor: ", Math.abs(comissaoGestor ?? 0));
+                    setTotalDespesas(-Math.abs(totalDespesaCalc));
                 }
                 if (comissaoVendaEfetuada) {
                     setCorretores(comissaoVendaEfetuada)
@@ -430,11 +432,22 @@ export default function SalesPage() {
                     const proLaboreCalc = Math.abs(proLabore);
                     setProLaboreData(proLaboreCalc);
                 }
+                let resultadoMC = 0;
+                if (margemContribuicaoCalculo && receitaBruta) {
+                    console.log("margemContribuicao", margemContribuicaoCalculo, "receitaBruta", receitaBruta);
+                    resultadoMC = margemContribuicaoCalculo / Math.abs(receitaBruta);
+                    setMargemContribuicaoPorcento(resultadoMC);
+                }
+                if (resultadoFixo && resultadoMC) {
+                    console.log("vendaValorFixo", resultadoFixo, "margemContribuicaoPorcento", resultadoMC);
+                    const resultadoMV = resultadoFixo / resultadoMC;
+                    setPontoEquilibrio(resultadoMV);
+                }
             }).catch((err) => {
                 setComissaoFolha(null);
                 console.error("Erro ao buscar contas em tempo real:", err);
             });
-    }, [queryMonth, queryYear, totalDespesasPessoal, totalDespesasPessoalExtras, fundoInovacao, impostos, lucroLiquido, comissaoGestorFetched]);
+    }, [queryMonth, queryYear, totalDespesasPessoal, totalDespesasPessoalExtras, fundoInovacaoFetched, impostos, lucroLiquido, comissaoGestorFetched]);
 
     useEffect(() => {
         const monthAbbr = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -452,10 +465,11 @@ export default function SalesPage() {
                     ]
                 };
                 try {
-                    const [res, closingData, managerData] = await Promise.all([
+                    const [res, closingData, managerData, innovationData] = await Promise.all([
                         realtimeReportData(body),
                         getMonthlyClosing(m.value, queryYear),
-                        getManagerCommission(m.value, queryYear).catch(() => null)
+                        getManagerCommission(m.value, queryYear).catch(() => null),
+                        getInnovationFund(m.value, queryYear).catch(() => null)
                     ]);
                     const receita = res.receitas?.find((r: any) => r.index === "1.1");
                     const despesa = res.despesas?.find((d: any) => d.index === "1.2");
@@ -505,7 +519,7 @@ export default function SalesPage() {
 
                     const receitaBruta = receita?.amount ?? null;
                     const totalDespesas = despesa?.amount ?? null;
-                    const impostos = impostosData;
+                    const impostos = getAmount("1.2.4");
 
                     const primeiroCalcDespesaPessoalExtra = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal);
                     const totalDespesasPessoalExtras = primeiroCalcDespesaPessoalExtra - Math.abs(proLabore) - Math.abs(salarios);
@@ -522,19 +536,19 @@ export default function SalesPage() {
                         receitaLiquida = Math.abs(receitaBruta ?? 0) - Math.abs(despesasNormais);
                     }
 
-                    let fundoInovacao = 0;
-                    if (receitaLiquida) {
-                        fundoInovacao = receitaLiquida * 0.10;
-                    }
-
                     let fundoDeReserva = 0;
                     if (receitaLiquida) {
                         fundoDeReserva = receitaLiquida * 0.05;
                     }
 
+                    let localFundoInovacao: number | null = null;
+                    if (innovationData && innovationData.fundo_inovacao !== null && innovationData.fundo_inovacao !== undefined) {
+                        localFundoInovacao = Number(innovationData.fundo_inovacao);
+                    }
+
                     let resultadoLiquido = 0;
                     if (receitaLiquida) {
-                        resultadoLiquido = Number(receitaLiquida) - Number(fundoInovacao);
+                        resultadoLiquido = Number(receitaLiquida) - Number(localFundoInovacao);
                     }
 
                     let calculoFolhaPagamento = 0;
@@ -550,8 +564,6 @@ export default function SalesPage() {
                     let comissaoGestor: number | null = null;
                     if (managerData && managerData.comissao_gestor !== null && managerData.comissao_gestor !== undefined) {
                         comissaoGestor = Number(managerData.comissao_gestor);
-                    } else if (lucroLiquido) {
-                        comissaoGestor = lucroLiquido * 0.208;
                     }
 
                     let retirada = null;
@@ -565,6 +577,7 @@ export default function SalesPage() {
                         despesasNormais,
                         receitaLiquida,
                         fundoDeReserva,
+                        fundoInovacaoFetched: localFundoInovacao,
                         resultadoLiquido,
                         folhaPagamento,
                         investimentos,
@@ -582,6 +595,7 @@ export default function SalesPage() {
                         despesasNormais: null,
                         receitaLiquida: null,
                         fundoDeReserva: null,
+                        fundoInovacaoFetched: null,
                         resultadoLiquido: null,
                         folhaPagamento: null,
                         investimentos: null,
@@ -793,7 +807,6 @@ export default function SalesPage() {
                         };
 
                         const receitaBruta = getAmount("1.1");
-                        const totalDespesas = getAmount("1.2");
 
                         const folhaPagamento = getAmount("1.2.2.1");
                         const outrasDespesasPessoal = getAmount("1.2.2.2");
@@ -828,6 +841,7 @@ export default function SalesPage() {
                         const direitos = getAmount("1.2.9.3");
                         const investimentosVals = getAmount("1.2.9.4");
                         const taxas = getAmount("1.2.4.3");
+                        const comissaoVendaEfetuada = getAmount("1.2.2.4.4");
                         const despesasNormais =
                             // despesasGerais removed
                             telefones + entidadesDeClasses + materiais + propagandaPublicidadeInstitucional + propagandaPublicidadeProduto + despesasComVeiculos + seguros + assessorias + servicos + manutencoes + doacoes + copaCozinha + comemoracoes + viagens + tarifasBancarias + jurosPagos + tarifaCartaoCredito + impostosData + prejuizos + bens + direitos + investimentosVals + taxas;
@@ -835,69 +849,49 @@ export default function SalesPage() {
                         const primeiroCalcTotalDespesasExtras = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal);
                         const totalDespesasPessoalExtras = primeiroCalcTotalDespesasExtras - Math.abs(proLabore) - Math.abs(salarios);
 
+                        // Mesma fórmula do topo: folha + outras + gratificações + comissaoLocacao + ajudaCusto - proLabore
                         const totalDespesasPessoal = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(gratificacoesPremiacoes) + Math.abs(comissaoLocacaoImoveis) + Math.abs(ajudaDeCusto) - Math.abs(proLabore);
-
-                        let comissaoFolha = 0;
-                        if (totalDespesasPessoal) {
-                            comissaoFolha = Math.abs(totalDespesasPessoal) - Math.abs(totalDespesasPessoalExtras) - Math.abs(salarios);
-                        }
-
-                        let receitaLiquida = 0;
-                        if (totalDespesasPessoalExtras && despesasNormais) {
-                            receitaLiquida = Math.abs(receitaBruta ?? 0) - Math.abs(despesasNormais);
-                        }
-
-                        let fundoInovacao = 0;
-                        if (receitaLiquida) {
-                            fundoInovacao = receitaLiquida * 0.10;
-                        }
-
-                        let resultadoLiquido = 0;
-                        if (receitaLiquida) {
-                            resultadoLiquido = Number(receitaLiquida) - Number(fundoInovacao);
-                        }
-
-                        let calculoFolhaPagamento = 0;
-                        if (comissaoFolha && salarios) {
-                            calculoFolhaPagamento = Math.abs(comissaoFolha) + Math.abs(salarios);
-                        }
-
-                        let lucroLiquido = 0;
-                        if (resultadoLiquido || calculoFolhaPagamento || investimentosVals) {
-                            lucroLiquido = Math.abs(resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentosVals ?? 0);
-                        }
 
                         const closingData = await getMonthlyClosing(m.value, year).catch(() => null);
                         const managerData = await getManagerCommission(m.value, year).catch(() => null);
-
-                        let comissoesReceber = 0;
-                        if (closingData && closingData.comissoes_receber) {
-                            comissoesReceber = Number(closingData.comissoes_receber);
-                        }
+                        const innovationData = await getInnovationFund(m.value, year).catch(() => null);
 
                         let comissaoGestor = 0;
-                        let lucroLiquidoForCalc = 0; // Aproximação simplificada se necessário, ou usar lógica completa
-                        // Da lógica principal: lucroLiquido = resultadoLiquido - calculoFolha - investimentos
-                        // Aqui: lucroLiquido?? 
-                        // Para simplificar, vou usar a lógica de comissão: se tem salvo, usa. Se não, não calcula (ou calcula se tiver dados suficientes)
-
                         if (managerData && managerData.comissao_gestor !== null && managerData.comissao_gestor !== undefined) {
                             comissaoGestor = Number(managerData.comissao_gestor);
-                        } else if (lucroLiquido) {
-                            comissaoGestor = lucroLiquido * 0.208;
                         }
 
-                        // Updated Retirada logic
-                        let retirada = 0;
-                        if (resultadoLiquido || calculoFolhaPagamento || investimentosVals || comissaoGestor) {
-                            retirada = (resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentosVals ?? 0) - Math.abs(comissaoGestor ?? 0);
+                        let localFundoInovacao = 0;
+                        if (innovationData && innovationData.fundo_inovacao !== null && innovationData.fundo_inovacao !== undefined) {
+                            localFundoInovacao = Number(innovationData.fundo_inovacao);
                         }
+
+                        // receitaLiquida = receitaBruta - despesasNormais - totalDespesasPessoal (igual ao topo, linha 353)
+                        let receitaLiquida = 0;
+                        if (totalDespesasPessoalExtras && despesasNormais) {
+                            receitaLiquida = Math.abs(receitaBruta ?? 0) - Math.abs(despesasNormais) - Math.abs(totalDespesasPessoal);
+                        }
+
+                        // resultadoLiquido = receitaLiquida - corretores(comissaoVendaEfetuada) - fundoInovacao (igual ao topo, linha 366)
+                        let resultadoLiquido = 0;
+                        if (receitaLiquida && comissaoVendaEfetuada && localFundoInovacao) {
+                            resultadoLiquido = Math.abs(receitaLiquida) - Math.abs(comissaoVendaEfetuada) - Number(localFundoInovacao);
+                        }
+
+                        // retirada = resultadoLiquido - comissaoGestor (igual ao topo, linha 411)
+                        let retirada = 0;
+                        if (resultadoLiquido || comissaoGestor) {
+                            retirada = resultadoLiquido - Math.abs(comissaoGestor);
+                        }
+
+                        // totalDespesas = totalDespesasPessoal + corretores + despesasNormais + fundoInovacao + comissaoGestor (igual ao topo, linha 420)
+                        const totalDespesasCalc = Math.abs(totalDespesasPessoal) + Math.abs(comissaoVendaEfetuada) + Math.abs(despesasNormais) + Number(localFundoInovacao) + Math.abs(comissaoGestor);
 
                         return {
                             year: `${monthAbbr[m.value]}/${year.toString().slice(-2)}`,
                             fullDate: startDate,
                             receitaBruta: receitaBruta,
-                            despesas: totalDespesas,
+                            despesas: totalDespesasCalc,
                             retirada: retirada > 0 ? retirada : 0
                         };
                     } catch (err) {
@@ -1028,8 +1022,8 @@ export default function SalesPage() {
                                         { value: Math.abs(despesasNormais ?? 0), name: 'Despesas Normais' },
                                         { value: Math.abs(totalDespesasPessoal ?? 0), name: 'Despesas com Pessoal' },
                                         { value: Math.abs(folhaDePagamento ?? 0), name: 'Folha de Pagamento' },
-                                        { value: Math.abs(fundoInovacao ?? 0), name: 'Fundo Inovação' },
-                                        { value: Math.abs(comissoesReceber ?? 0), name: 'Comissão Gestores' },
+                                        { value: Math.abs(fundoInovacaoFetched ?? 0), name: 'Fundo Inovação' },
+                                        { value: Math.abs(comissaoGestor ?? 0), name: 'Comissão Gestores' },
                                         { value: Math.abs(investimentos ?? 0), name: 'Investimentos' },
                                         { value: Math.abs(retirada ?? 0), name: 'Retirada' }
                                     ];
@@ -1137,17 +1131,10 @@ export default function SalesPage() {
                 <div className={styles.despesasPessoalInfoContent}>
                     <div className={styles.despesasPessoalInfoItem}>
                         <span className={styles.despesasPessoalInfoLabel}>
-                            PRO LABORE
-                        </span>
-                        <br />
-                        {proLaboreData !== null ? formatBRL(proLaboreData) : '---'}
-                    </div>
-                    <div className={styles.despesasPessoalInfoItem}>
-                        <span className={styles.despesasPessoalInfoLabel}>
                             FOLHA E PESSOAL
                         </span>
                         <br />
-                        {totalDespesasPessoal !== null ? formatBRL(totalDespesasPessoal) : '---'}
+                        {totalDespesasPessoal !== null ? formatBRL(-Math.abs(totalDespesasPessoal)) : '---'}
                     </div>
 
                     <div className={styles.despesasPessoalInfoItem}>
@@ -1155,35 +1142,28 @@ export default function SalesPage() {
                             COMISSÃO GESTÃO
                         </span>
                         <br />
-                        {comissaoGestor !== null ? formatBRL(comissaoGestor) : '---'}
-                    </div>
-                    <div className={styles.despesasPessoalInfoItem}>
-                        <span className={styles.despesasPessoalInfoLabel}>
-                            TOTAL DESPESAS COM PESSOAL EXTRAS
-                        </span>
-                        <br />
-                        {totalDespesasPessoalExtras !== null ? formatBRL(totalDespesasPessoalExtras) : '---'}
+                        {comissaoGestor !== null ? formatBRL(-Math.abs(comissaoGestor)) : '---'}
                     </div>
                     <div className={styles.despesasPessoalInfoItem}>
                         <span className={styles.despesasPessoalInfoLabel}>
                             RECEITA LIQUIDA
                         </span>
                         <br />
-                        {receitaLiquida !== null ? formatBRL(receitaLiquida) : '---'}
+                        {receitaLiquida !== null ? formatBRL(-Math.abs(receitaLiquida)) : '---'}
                     </div>
                     <div className={styles.despesasPessoalInfoItem}>
                         <span className={styles.despesasPessoalInfoLabel}>
                             CORRETORES
                         </span>
                         <br />
-                        {corretores !== null ? formatBRL(corretores) : '---'}
+                        {corretores !== null ? formatBRL(-Math.abs(corretores)) : '---'}
                     </div>
                     <div className={styles.despesasPessoalInfoItem}>
                         <span className={styles.despesasPessoalInfoLabel}>
                             DESPESAS MENOS CORRETAGEM
                         </span>
                         <br />
-                        {despesasMenosCorretagem !== null ? formatBRL(despesasMenosCorretagem) : '---'}
+                        {despesasMenosCorretagem !== null ? formatBRL(-Math.abs(despesasMenosCorretagem)) : '---'}
                     </div>
                 </div>
             </div>
@@ -1272,8 +1252,8 @@ export default function SalesPage() {
                             FUNDO DE INOVAÇÃO
                         </span>
                         <br />
-                        {receitaLiquida !== null
-                            ? formatBRL(receitaLiquida * 0.05)
+                        {fundoInovacaoFetched !== null
+                            ? formatBRL(fundoInovacaoFetched)
                             : '---'}
                     </p>
                     <div className={styles.despesasNormaisInfoIcon}>
@@ -1391,8 +1371,8 @@ export default function SalesPage() {
                                         <td>{row.totalDespesasPessoal !== null ? formatBRL(row.totalDespesasPessoal) : '---'}</td>
                                         <td>{row.despesasNormais !== null ? formatBRL(row.despesasNormais) : '---'}</td>
                                         <td>{row.receitaLiquida !== null ? formatBRL(row.receitaLiquida) : '---'}</td>
-                                        <td>{row.fundoDeReserva !== null ? formatBRL(row.fundoDeReserva) : '---'}</td>
-                                        <td>{row.fundoDeReserva !== null ? formatBRL(row.fundoDeReserva) : '---'}</td>
+                                        <td>{row.fundoInovacaoFetched !== null ? formatBRL(row.fundoInovacaoFetched) : '---'}</td>
+                                        <td>{formatBRL(0)}</td>
                                         <td>{row.resultadoLiquido !== null ? formatBRL(row.resultadoLiquido) : '---'}</td>
                                         <td>{row.folhaPagamento !== null ? formatBRL(row.folhaPagamento) : '---'}</td>
                                         <td>{row.investimentos !== null ? formatBRL(row.investimentos) : '---'}</td>

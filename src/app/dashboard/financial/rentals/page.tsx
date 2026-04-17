@@ -64,11 +64,13 @@ export default function RentalsPage() {
         month: string,
         receitaBruta: number | null,
         totalDespesasPessoal: number | null,
+        totalDespesasPessoalExtras: number | null,
         despesasNormais: number | null,
         receitaLiquida: number | null,
         fundoDeReserva: number | null,
         resultadoLiquido: number | null,
         folhaPagamento: number | null,
+        calculoFolhaPagamento: number | null,
         investimentos: number | null,
         impostos: number | null,
         totalDespesas: number | null,
@@ -91,18 +93,18 @@ export default function RentalsPage() {
         const exportData = annualClosingData.map(row => ({
             Mês: row.month,
             'Receita Bruta': row.receitaBruta ?? '',
-            'Despesas com Pessoal': row.totalDespesasPessoal ?? '',
+            'Despesas com Pessoal': row.totalDespesasPessoalExtras ?? '',
             'Despesas Normais': row.despesasNormais ?? '',
             'Receita Liquida': row.receitaLiquida ?? '',
             'Fundo de Inovação 5%': row.fundoDeReserva ?? '',
             'Fundo de Reserva 5%': row.fundoDeReserva ?? '',
             'Resultado Líquido': row.resultadoLiquido ?? '',
-            'Folha de Pagamento': row.folhaPagamento ?? '',
+            'Folha de Pagamento': row.calculoFolhaPagamento ?? '',
             'Investimentos': row.investimentos ?? '',
             'Impostos': row.impostos ?? '',
             'Despesas': row.totalDespesas ?? '',
             'Lucro Líquido': row.lucroLiquido ?? '',
-            'Comissão Gestores': row.comissaoGestores ?? '',
+            'Comissão Gestores': row.comissaoGestores !== null && row.comissaoGestores !== undefined ? -Math.abs(row.comissaoGestores) : '',
             'Retirada': row.retirada ?? ''
         }));
         const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -150,6 +152,7 @@ export default function RentalsPage() {
     const [pontoEquilibrio, setPontoEquilibrio] = useState<number>(0);
 
     const [impostos, setImpostos] = useState<number>(0);
+    const [dimob, setDimob] = useState<number>(0);
     const [totalDespesas, setTotalDespesas] = useState<number>(0);
     const [retirada, setRetirada] = useState<number>(0);
     const [customIndexes, setCustomIndexes] = useState<string[]>([]);
@@ -234,6 +237,7 @@ export default function RentalsPage() {
                 };
                 // const locacao = getAmount("1.1.1");
                 const folhaPagamento = getAmount("1.2.2.1");
+                const dimobData = getAmount("1.1.1.1.34");
                 const outrasDespesasPessoal = getAmount("1.2.2.2");
                 const proLabore = getAmount("1.2.2.1.12");
                 const salarios = getAmount("1.2.2.1.14");
@@ -266,7 +270,6 @@ export default function RentalsPage() {
                 const comissaoVendaEfetuada = getAmount("1.2.2.4.4");
                 const assinaturas = getAmount("1.2.1.15");
                 const jurosPagos = getAmount("1.2.3.2");
-                const reformas = getAmount("1.2.9.1");
 
                 const despesasNormaisCalc = (
                     despesasGerais
@@ -338,6 +341,9 @@ export default function RentalsPage() {
                     resultadoLiquidoCalc = Number(receitaLiquidaCalc) - Number(fundoInovacaoCalc);
                     setResultadoLiquido(resultadoLiquidoCalc);
                 }
+                if (dimobData) {
+                    setDimob(dimobData);
+                }
 
                 let calculoFolhaPagamentoCalc = 0;
                 if (comissaoFolhaCalc && salarios) {
@@ -348,6 +354,7 @@ export default function RentalsPage() {
                 let lucroLiquidoCalc = 0;
                 if (resultadoLiquidoCalc || calculoFolhaPagamento || investimentosVals) {
                     lucroLiquidoCalc = Math.abs(resultadoLiquidoCalc ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentosVals ?? 0);
+                    console.log("Resultado Liquido", resultadoLiquidoCalc, "Calculo Folha Pagamento", folhaDePagamento, "Investimentos", investimentosVals);
                     setLucroLiquido(lucroLiquidoCalc);
                 }
 
@@ -359,14 +366,13 @@ export default function RentalsPage() {
                 let comissaoGestorCalc = 0;
                 if (lucroLiquidoCalc) {
                     console.log("Lucro Liquido", lucroLiquidoCalc);
-                    comissaoGestorCalc = lucroLiquidoCalc * 0.208;
+                    comissaoGestorCalc = lucroLiquidoCalc * 0.213;
                     setComissaoGestor(comissaoGestorCalc);
                 }
                 if (comissaoFolha && salarios) {
                     const calculoFolhaPagamentoCalc = Math.abs(comissaoFolha) + Math.abs(salarios);
                     setCalculoFolhaPagamento(calculoFolhaPagamentoCalc);
                 }
-                // Removed section 2 check
                 if (receitaLiquida) {
                     setFundoInovacao(receitaLiquida * 0.05);
                 }
@@ -475,8 +481,8 @@ export default function RentalsPage() {
                     const totalDespesas = despesa?.amount ?? null;
                     const impostos = impostosFederais + impostosMunicipais;
 
-                    const primeiroCalcTotalDespesasExtras = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal);
-                    const totalDespesasPessoalExtras = primeiroCalcTotalDespesasExtras - Math.abs(proLabore) - Math.abs(salarios);
+                    const primeiroCalcTotalDespesasExtras = folhaPagamento + outrasDespesasPessoal;
+                    const totalDespesasPessoalExtras = primeiroCalcTotalDespesasExtras - proLabore - salarios;
 
                     const totalDespesasPessoal = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(gratificacoesPremiacoes) + Math.abs(comissaoLocacaoImoveis) + Math.abs(ajudaDeCusto) - Math.abs(proLabore);
 
@@ -517,7 +523,7 @@ export default function RentalsPage() {
 
                     let comissaoGestor = 0;
                     if (lucroLiquido) {
-                        comissaoGestor = lucroLiquido * 0.208;
+                        comissaoGestor = lucroLiquido * 0.213;
                     }
 
                     let retirada = 0;
@@ -534,11 +540,13 @@ export default function RentalsPage() {
                         month: monthAbbr[m.value],
                         receitaBruta,
                         totalDespesasPessoal,
+                        totalDespesasPessoalExtras,
                         despesasNormais,
                         receitaLiquida,
                         fundoDeReserva,
                         resultadoLiquido,
                         folhaPagamento,
+                        calculoFolhaPagamento,
                         investimentos,
                         impostos,
                         totalDespesas: calculoTotalDespesas,
@@ -551,11 +559,13 @@ export default function RentalsPage() {
                         month: monthAbbr[m.value],
                         receitaBruta: null,
                         totalDespesasPessoal: null,
+                        totalDespesasPessoalExtras: null,
                         despesasNormais: null,
                         receitaLiquida: null,
                         fundoDeReserva: null,
                         resultadoLiquido: null,
                         folhaPagamento: null,
+                        calculoFolhaPagamento: null,
                         investimentos: null,
                         impostos: null,
                         totalDespesas: null,
@@ -1266,7 +1276,7 @@ export default function RentalsPage() {
                                 <tr>
                                     <th>Mês</th>
                                     <th>Receita Bruta</th>
-                                    <th>Despesas com Pessoal</th>
+                                    <th>Despesas com Pessoal Extras</th>
                                     <th>Despesas Normais</th>
                                     <th>Receita Liquida</th>
                                     <th>Fundo de Inovação 5%</th>
@@ -1289,18 +1299,18 @@ export default function RentalsPage() {
                                     >
                                         <td>{row.month}</td>
                                         <td>{row.receitaBruta !== null ? formatBRL(row.receitaBruta) : '---'}</td>
-                                        <td>{row.totalDespesasPessoal !== null ? formatBRL(row.totalDespesasPessoal) : '---'}</td>
+                                        <td>{row.totalDespesasPessoalExtras !== null && row.totalDespesasPessoalExtras !== undefined ? formatBRL(row.totalDespesasPessoalExtras) : '---'}</td>
                                         <td>{row.despesasNormais !== null ? formatBRL(row.despesasNormais) : '---'}</td>
                                         <td>{row.receitaLiquida !== null ? formatBRL(row.receitaLiquida) : '---'}</td>
                                         <td>{row.fundoDeReserva !== null ? formatBRL(row.fundoDeReserva) : '---'}</td>
-                                        <td>{row.fundoDeReserva !== null ? formatBRL(row.fundoDeReserva) : '---'}</td>
+                                        <td>{formatBRL(0)}</td>
                                         <td>{row.resultadoLiquido !== null ? formatBRL(row.resultadoLiquido) : '---'}</td>
-                                        <td>{row.folhaPagamento !== null ? formatBRL(row.folhaPagamento) : '---'}</td>
+                                        <td>{row.calculoFolhaPagamento !== null && row.calculoFolhaPagamento !== undefined ? formatBRL(row.calculoFolhaPagamento) : '---'}</td>
                                         <td>{row.investimentos !== null ? formatBRL(row.investimentos) : '---'}</td>
                                         <td>{row.impostos !== null ? formatBRL(row.impostos) : '---'}</td>
                                         <td>{row.totalDespesas !== null ? formatBRL(row.totalDespesas) : '---'}</td>
                                         <td>{row.lucroLiquido !== null ? formatBRL(row.lucroLiquido) : '---'}</td>
-                                        <td>{row.comissaoGestores !== null ? formatBRL(row.comissaoGestores) : '---'}</td>
+                                        <td>{row.comissaoGestores !== null ? formatBRL(-Math.abs(row.comissaoGestores)) : '---'}</td>
                                         <td>{row.retirada !== null ? formatBRL(row.retirada) : '---'}</td>
                                     </tr>
                                 ))}

@@ -1,6 +1,6 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link'
 import { realtimeReportData, getItemData, upsertItemData, getMonthlyClosing, upsertMonthlyClosing, getManagerCommission, upsertManagerCommission, getInnovationFund, upsertInnovationFund } from '@/services/api';
 import { PencilIcon, DocumentCheckIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
@@ -98,7 +98,7 @@ const months = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
-export default function Page() {
+function ReportsContent() {
   const searchParams = useSearchParams();
   const month = searchParams.get('month');
   const year = searchParams.get('year');
@@ -824,5 +824,13 @@ export default function Page() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <ReportsContent />
+    </Suspense>
   );
 }

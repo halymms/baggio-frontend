@@ -6,8 +6,10 @@ import { Options } from "./_shared";
 import { ActiveContracts } from "./ActiveContracts";
 import { TerminatedContracts } from "./TerminatedContracts";
 import { RemovedProperties } from "./RemovedProperties";
+import { ListedProperties } from "./ListedProperties";
+import { AdvertisedProperties } from "./AdvertisedProperties";
 
-type Tab = 'ativos' | 'rescindidos' | 'baixados';
+type Tab = 'ativos' | 'rescindidos' | 'baixados' | 'angariados' | 'divulgados';
 
 export default function Page() {
     const [options, setOptions] = useState<Options>({});
@@ -44,11 +46,25 @@ export default function Page() {
                 >
                     Imóveis Baixados
                 </button>
+                <button
+                    className={`${styles.tabButton} ${activeTab === 'angariados' ? styles.tabButtonActive : ''}`}
+                    onClick={() => setActiveTab('angariados')}
+                >
+                    Imóveis Angariados
+                </button>
+                <button
+                    className={`${styles.tabButton} ${activeTab === 'divulgados' ? styles.tabButtonActive : ''}`}
+                    onClick={() => setActiveTab('divulgados')}
+                >
+                    Imóveis Divulgados
+                </button>
             </div>
 
             {activeTab === 'ativos' && <ActiveContracts options={options} />}
             {activeTab === 'rescindidos' && <TerminatedContracts options={options} />}
             {activeTab === 'baixados' && <RemovedProperties options={options} />}
+            {activeTab === 'angariados' && <ListedProperties options={options} />}
+            {activeTab === 'divulgados' && <AdvertisedProperties options={options} />}
         </div>
     );
 }

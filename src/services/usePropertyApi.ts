@@ -51,6 +51,26 @@ export function usePropertyApi() {
         return res.json();
     };
 
+    const advertisedPropertyReport = async () => {
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const now = new Date();
+
+        const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const start = `${startDate.getFullYear()}-${pad(startDate.getMonth() + 1)}-01`;
+        const end = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(lastDay)}`;
+
+        const res = await fetch(`${API_URL}/api/property/property/report/advertised`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dteNewListing: [start, end] }),
+        });
+        return res.json() as Promise<{
+            lastMonths: { month: string; contractsAmount: number }[];
+            purposes: Record<string, { amount: number; value: number }>;
+        }>;
+    };
+
     const activeContractCount = async (): Promise<number> => {
         const res = await fetch(`${API_URL}/api/property/property/report/list`, {
             method: 'POST',
@@ -75,5 +95,6 @@ export function usePropertyApi() {
         removedPropertyReport,
         rentalContractOptions,
         activeContractCount,
+        advertisedPropertyReport,
     }
 }

@@ -192,6 +192,19 @@
         background: #fff;
         border: 1px solid #0000001a;
         border-radius: 14px;
+
+        &.chartCardFull {
+            grid-column: 1 / -1;
+        }
+
+        &.chartCardLeft {
+            grid-column: 1;
+        }
+
+        &.chartCardTallRight {
+            grid-column: 2;
+            grid-row: span 2;
+        }
     }
 
     .skeletonHeader {

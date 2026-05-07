@@ -1,22 +1,33 @@
 'use client';
 import { useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import styles from './property.module.scss';
 import { usePropertyApi } from "@/services/usePropertyApi";
 import { buildLookup, COLORS_GUARANTEE, COLORS_TERMINATION, COLORS_TYPE, Filters, Options, sumValues } from "./_shared";
 
 const now = new Date();
 
+const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+const brlCompact = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
+
+type Timeseries = { lastMonths: { month: string; count: number; value: number }[] };
+
 export function TerminatedContracts({ options }: { options: Options }) {
     const [month, setMonth] = useState(now.getMonth() + 1);
     const [year, setYear] = useState(now.getFullYear());
     const [data, setData] = useState<Record<string, unknown>>();
+    const [timeseries, setTimeseries] = useState<Timeseries | null>(null);
 
-    const { terminatedContractReport } = usePropertyApi();
+    const { terminatedContractReport, terminatedTimeseries } = usePropertyApi();
 
     useEffect(() => {
         setData(undefined);
-        terminatedContractReport(month, year).then(setData);
+        setTimeseries(null);
+
+        let cancelled = false;
+        terminatedContractReport(month, year).then(d => { if (!cancelled) setData(d); });
+        terminatedTimeseries(month, year).then(t => { if (!cancelled) setTimeseries(t); });
+        return () => { cancelled = true; };
     }, [month, year]);
 
     const guaranteeLabels = buildLookup(options, 'guarantee');
@@ -28,7 +39,7 @@ export function TerminatedContracts({ options }: { options: Options }) {
             <Filters monthVal={month} yearVal={year} onMonth={setMonth} onYear={setYear} />
             {!data ? (
                 <>
-                    {[...Array(3)].map((_, i) => (
+                    {[...Array(4)].map((_, i) => (
                         <div key={i} className={styles.skeletonCard}>
                             <div className={styles.skeletonHeader}>
                                 <div className={styles.skeletonBlock} style={{ width: '40%', height: 16 }} />
@@ -124,6 +135,50 @@ export function TerminatedContracts({ options }: { options: Options }) {
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
+                    </div>
+                    <div className={`${styles.chartCard} ${styles.chartCardFull}`}>
+                        <div className={styles.chartHeader}>
+                            <p className={styles.chartTitle}>Rescisões por mês (últimos 6 meses)</p>
+                            <span className={styles.chartTotal}>
+                                {timeseries
+                                    ? `${timeseries.lastMonths.reduce((s, m) => s + m.count, 0)} · ${brl.format(timeseries.lastMonths.reduce((s, m) => s + m.value, 0))}`
+                                    : ''}
+                            </span>
+                        </div>
+                        {timeseries === null ? (
+                            <div className={styles.skeletonBlock} style={{ width: '100%', height: 300, borderRadius: 8 }} />
+                        ) : (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={timeseries.lastMonths} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis yAxisId="left" allowDecimals={false} />
+                                    <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => brlCompact.format(v)} />
+                                    <Tooltip formatter={(value: number, name: string) =>
+                                        name === 'Valor' ? brl.format(value) : value
+                                    } />
+                                    <Legend />
+                                    <Line
+                                        yAxisId="left"
+                                        type="monotone"
+                                        dataKey="count"
+                                        name="Quantidade"
+                                        stroke="#2563eb"
+                                        strokeWidth={2}
+                                        dot={{ fill: '#1e3a5f', r: 4 }}
+                                    />
+                                    <Line
+                                        yAxisId="right"
+                                        type="monotone"
+                                        dataKey="value"
+                                        name="Valor"
+                                        stroke="#ff6b35"
+                                        strokeWidth={2}
+                                        dot={{ fill: '#1e3a5f', r: 4 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </>
             )}

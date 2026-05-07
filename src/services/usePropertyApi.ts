@@ -72,13 +72,72 @@ export function usePropertyApi() {
     };
 
     const activeContractCount = async (): Promise<number> => {
-        const res = await fetch(`${API_URL}/api/property/property/report/list`, {
+        const res = await fetch(`${API_URL}/api/property/property/active/count`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ activeContract: ['ACTIVE'] })
         });
         const data = await res.json();
-        return Array.isArray(data.data) ? data.data.length : 0;
+        return typeof data.count === 'number' ? data.count : 0;
+    };
+
+    const activeContractSummary = async (month: number, year: number) => {
+        const res = await fetch(`${API_URL}/api/rental/contract/active/summary`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ month, year }),
+        });
+        return res.json() as Promise<{
+            count: number;
+            contractType: Record<string, number>;
+            guarantees: Record<string, number>;
+            pcf: Record<string, number>;
+            readjustments: Record<string, number>;
+            valuesByContractType: Record<string, number>;
+            totalValue: number;
+        }>;
+    };
+
+    const activeContractTimeseries = async (month: number, year: number) => {
+        const res = await fetch(`${API_URL}/api/rental/contract/active/timeseries`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ month, year }),
+        });
+        return res.json() as Promise<{
+            lastMonths: { month: string; contractsAmount: number }[];
+        }>;
+    };
+
+    const removedTimeseries = async (month: number, year: number) => {
+        const res = await fetch(`${API_URL}/api/property/property/removed/timeseries`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ month, year }),
+        });
+        return res.json() as Promise<{
+            lastMonths: { month: string; count: number }[];
+        }>;
+    };
+
+    const terminatedTimeseries = async (month: number, year: number) => {
+        const res = await fetch(`${API_URL}/api/rental/contract/terminated/timeseries`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ month, year }),
+        });
+        return res.json() as Promise<{
+            lastMonths: { month: string; count: number; value: number }[];
+        }>;
+    };
+
+    const terminatedContractCount = async (month: number, year: number): Promise<number> => {
+        const res = await fetch(`${API_URL}/api/rental/contract/terminated/count`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ month, year }),
+        });
+        const data = await res.json();
+        return typeof data.count === 'number' ? data.count : 0;
     };
 
     const rentalContractOptions = async () => {
@@ -96,5 +155,10 @@ export function usePropertyApi() {
         rentalContractOptions,
         activeContractCount,
         advertisedPropertyReport,
+        activeContractSummary,
+        activeContractTimeseries,
+        terminatedContractCount,
+        terminatedTimeseries,
+        removedTimeseries,
     }
 }

@@ -1,13 +1,38 @@
-const API_URL = 'http://localhost:4000';
+import { ApiError, fetchJson, fetchRaw } from '@/lib/apiClient';
+import type {
+  CashFlowResponse,
+  FinancialSection,
+  InnovationFund,
+  ItemData,
+  ManagerCommission,
+  MonthlyClosing,
+  OpenFinancialStatementPayload,
+  RealtimeReportParams,
+  RealtimeReportResponse,
+} from '@/types/properfy';
+import type {
+  CreateUserRequest,
+  LoginRequest,
+  LoginResponse,
+  User,
+} from '@/types/user';
 
-// Buscar dados de um item para um mês/ano (inclui observacao)
-export async function getItemData(itemId: number, mes: number, ano: number) {
-  const res = await fetch(`${API_URL}/api/properfy/item-data/${itemId}?mes=${mes}&ano=${ano}`);
-  if (!res.ok) return null;
-  return res.json(); // retorna { planejado, observacao, ... }
+const REALTIME_TIMEOUT_MS = 60_000;
+
+export async function getItemData(
+  itemId: number,
+  mes: number,
+  ano: number
+): Promise<ItemData | null> {
+  try {
+    return await fetchJson<ItemData>(
+      `/api/properfy/item-data/${itemId}?mes=${mes}&ano=${ano}`
+    );
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
 }
-
-// Cadastrar/editar dados de um item para um mês/ano (inclui observacao)
 
 export async function upsertItemData(
   itemId: number,
@@ -16,25 +41,31 @@ export async function upsertItemData(
   ano: number,
   method: 'POST' | 'PUT',
   observacao?: string | null
-) {
-  const body: any = { planejado, mes, ano };
+): Promise<Response> {
+  const body: Record<string, unknown> = { planejado, mes, ano };
   if (observacao !== undefined) body.observacao = observacao;
-  const res = await fetch(`${API_URL}/api/properfy/item-data/${itemId}`, {
+  return fetchRaw(`/api/properfy/item-data/${itemId}`, {
     method,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
-  return res;
 }
 
-// Buscar dados do fechamento mensal
-export async function getMonthlyClosing(mes: number, ano: number) {
-  const res = await fetch(`${API_URL}/api/properfy/monthly-closing?mes=${mes}&ano=${ano}`);
-  if (!res.ok) return null;
-  return res.json();
+export async function getMonthlyClosing(
+  mes: number,
+  ano: number
+): Promise<MonthlyClosing | null> {
+  try {
+    return await fetchJson<MonthlyClosing>(
+      `/api/properfy/monthly-closing?mes=${mes}&ano=${ano}`
+    );
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 400)) {
+      return null;
+    }
+    throw err;
+  }
 }
 
-// Cadastrar/atualizar dados do fechamento mensal
 export async function upsertMonthlyClosing(data: {
   mes: number;
   ano: number;
@@ -42,65 +73,129 @@ export async function upsertMonthlyClosing(data: {
   comissoes_receber: number;
   comissoes_receber_prox_mes: number;
   observacao: string;
-}) {
-  const res = await fetch(`${API_URL}/api/properfy/monthly-closing`, {
+}): Promise<Response> {
+  return fetchRaw('/api/properfy/monthly-closing', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  return res;
-}
-
-export async function openFinancialStatement(data: any) {
-  const res = await fetch(`${API_URL}/api/properfy/open-financial-statement`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Erro ao buscar extrato financeiro');
-  return res.json();
 }
 
-export async function realtimeReportData(params: any) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 60000); // 60 segundos
-
+export async function getManagerCommission(
+  mes: number,
+  ano: number
+): Promise<ManagerCommission | null> {
   try {
-    const res = await fetch(`${API_URL}/api/properfy/real-time-report`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-      signal: controller.signal,
-    });
-    if (!res.ok) throw new Error('Erro ao buscar dados de contas em tempo real');
-    return await res.json();
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
-      console.error('Timeout!');
-      throw new Error('Timeout ao buscar dados de contas em tempo real');
+    return await fetchJson<ManagerCommission>(
+      `/api/properfy/manager-commission?mes=${mes}&ano=${ano}`
+    );
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 400)) {
+      return null;
     }
     throw err;
-  } finally {
-    clearTimeout(timeout);
   }
 }
 
-export async function login(email: string, password: string) {
-  const res = await fetch(`${API_URL}/auth/login`, {
+export async function upsertManagerCommission(data: {
+  mes: number;
+  ano: number;
+  comissao_gestor: number;
+  observacao?: string;
+}): Promise<Response> {
+  return fetchRaw('/api/properfy/manager-commission', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error('Login inválido');
-  return res.json();
 }
 
-export async function getUsers(token: string) {
-  const res = await fetch(`${API_URL}/users`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
-  });
-  if (!res.ok) throw new Error('Não autorizado');
-  return res.json();
+export async function getInnovationFund(
+  mes: number,
+  ano: number
+): Promise<InnovationFund | null> {
+  try {
+    return await fetchJson<InnovationFund>(
+      `/api/properfy/innovation-fund?mes=${mes}&ano=${ano}`
+    );
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 400)) {
+      return null;
+    }
+    throw err;
+  }
 }
+
+export async function upsertInnovationFund(data: {
+  mes: number;
+  ano: number;
+  fundo_inovacao: number;
+  observacao?: string;
+}): Promise<Response> {
+  return fetchRaw('/api/properfy/innovation-fund', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function openFinancialStatement(
+  data: OpenFinancialStatementPayload
+): Promise<RealtimeReportResponse> {
+  return fetchJson<RealtimeReportResponse>(
+    '/api/properfy/open-financial-statement',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function realtimeReportData(
+  params: RealtimeReportParams
+): Promise<RealtimeReportResponse> {
+  try {
+    return await fetchJson<RealtimeReportResponse>(
+      '/api/properfy/real-time-report',
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+        timeoutMs: REALTIME_TIMEOUT_MS,
+      }
+    );
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 408) {
+      throw new Error('Timeout ao buscar dados de contas em tempo real');
+    }
+    throw err;
+  }
+}
+
+export async function getCashFlow(
+  mes: number,
+  ano: number
+): Promise<CashFlowResponse> {
+  return fetchJson<CashFlowResponse>(
+    `/api/properfy/cash-flow?mes=${mes}&ano=${ano}`
+  );
+}
+
+export async function login(
+  credentials: LoginRequest
+): Promise<LoginResponse> {
+  return fetchJson<LoginResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(credentials),
+  });
+}
+
+export async function getUsers(): Promise<User[]> {
+  return fetchJson<User[]>('/users', { auth: true });
+}
+
+export async function createUser(data: CreateUserRequest): Promise<User> {
+  return fetchJson<User>('/users', {
+    method: 'POST',
+    body: JSON.stringify(data),
+    auth: true,
+  });
+}
+
+export type { FinancialSection };

@@ -1,11 +1,20 @@
 'use client';
+export const dynamic = 'force-dynamic';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link'
-import { realtimeReportData, getItemData, upsertItemData, getMonthlyClosing, upsertMonthlyClosing } from '@/services/api';
+import { realtimeReportData, getItemData, upsertItemData, getMonthlyClosing, upsertMonthlyClosing, getManagerCommission, upsertManagerCommission, getInnovationFund, upsertInnovationFund } from '@/services/api';
+import type { RealtimeReportParams, RealtimeReportResponse, ReportIndexItem } from '@/types/properfy';
+import { FINANCIAL_COMPANY_IDS } from '@/lib/financial/constants';
 import { PencilIcon, DocumentCheckIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 
 import styles from './reports.module.scss';
+
+type ReportOriginalItem = ReportIndexItem & { id: number };
+
+function isReportOriginalItem(item: ReportIndexItem): item is ReportOriginalItem {
+  return typeof item.id === 'number';
+}
 
 async function fetchObservacao(itemId: number, mes: number, ano: number) {
   const data = await getItemData(itemId, mes, ano);
@@ -34,21 +43,19 @@ async function saveObservacao(itemId: number, observacao: string, mes: number, a
 }
 // Função para buscar todos os realizados do ano, agrupando por index, de forma sequencial
 async function fetchRealizadoMediaAnoPorIndex(ano: number, companies: number[], onPartialUpdate?: (partial: Record<string, number[]>) => void) {
+  void companies;
   const meses = Array.from({ length: 12 }, (_, i) => i);
   const realizadoPorIndex: Record<string, number[]> = {};
   for (const mes of meses) {
     const startDate = new Date(ano, mes, 1);
     const endDate = new Date(ano, mes + 1, 0);
-    const body = {
+    const body: RealtimeReportParams = {
       section: null,
-      companies,
-      dteRange: [
-        startDate.toISOString(),
-        endDate.toISOString()
-      ]
+      companies: [...FINANCIAL_COMPANY_IDS],
+      dteRange: [startDate.toISOString(), endDate.toISOString()],
     };
     const res = await realtimeReportData(body);
-    const mesItens = Array.isArray(res?.original) ? res.original : [];
+    const mesItens = res.original ?? [];
     for (const item of mesItens) {
       if (!item.index) continue;
       if (!realizadoPorIndex[item.index]) realizadoPorIndex[item.index] = [];
@@ -98,7 +105,7 @@ const months = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
-export default function Page() {
+function ReportsContent() {
   const searchParams = useSearchParams();
   const month = searchParams.get('month');
   const year = searchParams.get('year');
@@ -113,7 +120,7 @@ export default function Page() {
   const [editingObsId, setEditingObsId] = useState<number | null>(null);
   const [editObsValue, setEditObsValue] = useState<string>("");
 
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<RealtimeReportResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Para edição inline
@@ -129,18 +136,44 @@ export default function Page() {
   const [observacaoGeral, setObservacaoGeral] = useState<string>("");
   const [isEditingClosing, setIsEditingClosing] = useState<boolean>(false);
 
+  // States for manager commission
+  const [comissaoGestor, setComissaoGestor] = useState<string>("");
+  const [observacaoGestor, setObservacaoGestor] = useState<string>("");
+  const [isEditingManagerCommission, setIsEditingManagerCommission] = useState<boolean>(false);
+
+  // States for innovation fund
+  const [fundoInovacao, setFundoInovacao] = useState<string>("");
+  const [observacaoFundoInovacao, setObservacaoFundoInovacao] = useState<string>("");
+  const [isEditingInnovationFund, setIsEditingInnovationFund] = useState<boolean>(false);
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
   const parseCurrency = (value: string) => {
+    const isNegative = value.includes('-');
     const raw = value.replaceAll(/[^\d]/g, "");
-    return Number(raw) / 100;
+    if (!raw) return 0;
+    const num = Number(raw) / 100;
+    return isNegative ? -num : num;
   };
 
   const handleCurrencyChange = (value: string, setter: (val: string) => void) => {
-    const num = parseCurrency(value);
-    setter(num ? formatCurrency(num) : "");
+    const isNegative = value.includes('-');
+    const raw = value.replaceAll(/[^\d]/g, "");
+    
+    if (!raw && !isNegative) {
+      setter("");
+      return;
+    }
+    
+    if (!raw && isNegative) {
+      setter("-");
+      return;
+    }
+    
+    const num = Number(raw) / 100;
+    setter(formatCurrency(isNegative ? -num : num));
   };
 
   const handleSaveClosing = async () => {
@@ -167,6 +200,55 @@ export default function Page() {
     }
   };
 
+  const handleSaveManagerCommission = async () => {
+    if (!month || !year) return;
+    try {
+      const dataManagerCommission = {
+        mes: Number(month),
+        ano: Number(year),
+        comissao_gestor: parseCurrency(comissaoGestor),
+        observacao: observacaoGestor
+      };
+      console.log('Salvando comissão de gestores:', dataManagerCommission);
+      const res = await upsertManagerCommission(dataManagerCommission);
+      if (res.ok) {
+        alert('Comissão de gestores salva com sucesso!');
+        setIsEditingManagerCommission(false);
+      } else {
+        const errorText = await res.text();
+        console.error('Erro ao salvar:', res.status, errorText);
+        alert(`Erro ao salvar comissão de gestores (${res.status}): ${errorText}`);
+      }
+    } catch (e) {
+      console.error('Exceção ao salvar comissão:', e);
+      alert(`Erro ao salvar comissão de gestores: ${e}`);
+    }
+  };
+
+  const handleSaveInnovationFund = async () => {
+    if (!month || !year) return;
+    try {
+      const dataInnovationFund = {
+        mes: Number(month),
+        ano: Number(year),
+        fundo_inovacao: parseCurrency(fundoInovacao),
+        observacao: observacaoFundoInovacao
+      };
+      const res = await upsertInnovationFund(dataInnovationFund);
+      if (res.ok) {
+        alert('Fundo de inovação salvo com sucesso!');
+        setIsEditingInnovationFund(false);
+      } else {
+        const errorText = await res.text();
+        console.error('Erro ao salvar:', res.status, errorText);
+        alert(`Erro ao salvar fundo de inovação (${res.status}): ${errorText}`);
+      }
+    } catch (e) {
+      console.error('Exceção ao salvar fundo de inovação:', e);
+      alert(`Erro ao salvar fundo de inovação: ${e}`);
+    }
+  };
+
   // Carrega dados principais
   useEffect(() => {
     if (!month || !year) return;
@@ -174,32 +256,36 @@ export default function Page() {
     setError(null);
     const startDate = new Date(Number(year), Number(month), 1);
     const endDate = new Date(Number(year), Number(month) + 1, 0);
-    const body = {
-      section: selectedSection ? Number(selectedSection) : null,
-      companies: [1, 3, 4, 5, 6, 8, 9],
-      dteRange: [
-        startDate.toISOString(),
-        endDate.toISOString()
-      ]
+    const body: RealtimeReportParams = {
+      section: selectedSection as RealtimeReportParams['section'],
+      companies: [...FINANCIAL_COMPANY_IDS],
+      dteRange: [startDate.toISOString(), endDate.toISOString()],
     };
     realtimeReportData(body)
       .then((res) => {
         setData(res);
       })
-      .catch((err) => {
+      .catch(() => {
         setError('Erro ao buscar dados');
         setData(null);
       })
       .finally(() => setLoading(false));
   }, [month, year, selectedSection]);
 
+  const originalItems: ReportOriginalItem[] = (data?.original ?? [])
+    .filter(isReportOriginalItem);
+
   // Carrega planejados apenas quando data.original muda
   useEffect(() => {
-    if (!data || !Array.isArray(data.original) || !month || !year) return;
+    if (!month || !year) return;
+    const currentItems: ReportOriginalItem[] = (data?.original ?? []).filter(
+      isReportOriginalItem
+    );
+    if (currentItems.length === 0) return;
     let isMounted = true;
     const mesNum = Number(month);
     const anoNum = Number(year);
-    Promise.all(data.original.map(async (item: any) => {
+    Promise.all(currentItems.map(async (item) => {
       const planned = await fetchPlanned(item.id, mesNum, anoNum);
       return [item.id, planned];
     })).then(entries => {
@@ -229,11 +315,15 @@ export default function Page() {
   }, [data, year, loading]);
 
   useEffect(() => {
-    if (!data || !Array.isArray(data.original) || !month || !year) return;
+    if (!month || !year) return;
+    const currentItems: ReportOriginalItem[] = (data?.original ?? []).filter(
+      isReportOriginalItem
+    );
+    if (currentItems.length === 0) return;
     let isMounted = true;
     const mesNum = Number(month);
     const anoNum = Number(year);
-    Promise.all(data.original.map(async (item: any) => {
+    Promise.all(currentItems.map(async (item) => {
       const obs = await fetchObservacao(item.id, mesNum, anoNum);
       return [item.id, obs];
     })).then(entries => {
@@ -279,6 +369,65 @@ export default function Page() {
     return () => { isMounted = false; };
   }, [month, year]);
 
+  // Load manager commission data
+  useEffect(() => {
+    if (!month || !year) return;
+    let isMounted = true;
+    const mesNum = Number(month);
+    const anoNum = Number(year);
+
+    getManagerCommission(mesNum, anoNum).then(data => {
+      if (isMounted) {
+        const hasData = data && (
+          data.comissao_gestor !== null && data.comissao_gestor !== undefined ||
+          (data.observacao && data.observacao.trim() !== '')
+        );
+
+        if (hasData) {
+          setComissaoGestor(data.comissao_gestor ? formatCurrency(data.comissao_gestor) : "");
+          setObservacaoGestor(data.observacao || "");
+          setIsEditingManagerCommission(false);
+        } else {
+          // Reset if no data found and enable edit mode
+          setComissaoGestor("");
+          setObservacaoGestor("");
+          setIsEditingManagerCommission(true);
+        }
+      }
+    });
+
+    return () => { isMounted = false; };
+  }, [month, year]);
+
+  // Load innovation fund data
+  useEffect(() => {
+    if (!month || !year) return;
+    let isMounted = true;
+    const mesNum = Number(month);
+    const anoNum = Number(year);
+
+    getInnovationFund(mesNum, anoNum).then(data => {
+      if (isMounted) {
+        const hasData = data && (
+          data.fundo_inovacao !== null && data.fundo_inovacao !== undefined ||
+          (data.observacao && data.observacao.trim() !== '')
+        );
+
+        if (hasData) {
+          setFundoInovacao(data.fundo_inovacao ? formatCurrency(data.fundo_inovacao) : "");
+          setObservacaoFundoInovacao(data.observacao || "");
+          setIsEditingInnovationFund(false);
+        } else {
+          setFundoInovacao("");
+          setObservacaoFundoInovacao("");
+          setIsEditingInnovationFund(true);
+        }
+      }
+    });
+
+    return () => { isMounted = false; };
+  }, [month, year]);
+
   return (
     <div className={styles.reportsPage}>
       <Link
@@ -314,7 +463,7 @@ export default function Page() {
       </div>
 
       {/* Monthly Closing Section */}
-      {month && year && (
+      {month && year && selectedSection == 2 && (
         <div className={styles.commissionContainer}>
           <h3 className={styles.commissionTitle}>Dados de Comissão</h3>
           <div className={styles.commissionEditContainer}>
@@ -409,9 +558,143 @@ export default function Page() {
           </div>
         </div>
       )}
+
+      {/* Manager Commission Section */}
+      {month && year && selectedSection == 2 && (
+        <div className={styles.commissionContainer}>
+          <h3 className={styles.commissionTitle}>Comissão de Gestores</h3>
+          <div className={styles.commissionEditContainer}>
+            <div className={styles.commissionEditItem}>
+              <label>Comissão Gestor</label>
+              {isEditingManagerCommission ? (
+                <input
+                  type="text"
+                  value={comissaoGestor}
+                  onChange={(e) => {
+                    handleCurrencyChange(e.target.value, setComissaoGestor)
+                    setIsEditingManagerCommission(true)
+                  }}
+                  placeholder="R$ 0,00"
+                />
+              ) : (
+                <div className={styles.commissionValue}>
+                  {comissaoGestor || '-'}
+                </div>
+              )}
+            </div>
+            <div className={styles.commissionEditItem} style={{ gridColumn: '1 / -1' }}>
+              <label>Observação</label>
+              {isEditingManagerCommission ? (
+                <textarea
+                  className={styles.commissionEditItemTextArea}
+                  value={observacaoGestor}
+                  onChange={(e) => setObservacaoGestor(e.target.value)}
+                  placeholder="Observações sobre a comissão..."
+                />
+              ) : (
+                <div className={styles.commissionValue}>
+                  {observacaoGestor || '-'}
+                </div>
+              )}
+            </div>
+            <div className={styles.commissionActionsContainer}>
+              {isEditingManagerCommission ? (
+                <div className={styles.commissionActionsContent}>
+                  <button
+                    className={styles.commissionSaveButton}
+                    onClick={handleSaveManagerCommission}
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    className={styles.commissionCancelButton}
+                    onClick={() => setIsEditingManagerCommission(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className={styles.commissionEditButton}
+                  onClick={() => setIsEditingManagerCommission(true)}
+                >
+                  <PencilIcon width={16} height={16} /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Innovation Fund Section */}
+      {month && year && selectedSection == 2 && (
+        <div className={styles.commissionContainer}>
+          <h3 className={styles.commissionTitle}>Fundo de Inovação</h3>
+          <div className={styles.commissionEditContainer}>
+            <div className={styles.commissionEditItem}>
+              <label>Fundo de Inovação</label>
+              {isEditingInnovationFund ? (
+                <input
+                  type="text"
+                  value={fundoInovacao}
+                  onChange={(e) => {
+                    handleCurrencyChange(e.target.value, setFundoInovacao);
+                    setIsEditingInnovationFund(true);
+                  }}
+                  placeholder="R$ 0,00"
+                />
+              ) : (
+                <div className={styles.commissionValue}>
+                  {fundoInovacao || '-'}
+                </div>
+              )}
+            </div>
+            <div className={styles.commissionEditItem} style={{ gridColumn: '1 / -1' }}>
+              <label>Observação</label>
+              {isEditingInnovationFund ? (
+                <textarea
+                  className={styles.commissionEditItemTextArea}
+                  value={observacaoFundoInovacao}
+                  onChange={(e) => setObservacaoFundoInovacao(e.target.value)}
+                  placeholder="Observações sobre o fundo de inovação..."
+                />
+              ) : (
+                <div className={styles.commissionValue}>
+                  {observacaoFundoInovacao || '-'}
+                </div>
+              )}
+            </div>
+            <div className={styles.commissionActionsContainer}>
+              {isEditingInnovationFund ? (
+                <div className={styles.commissionActionsContent}>
+                  <button
+                    className={styles.commissionSaveButton}
+                    onClick={handleSaveInnovationFund}
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    className={styles.commissionCancelButton}
+                    onClick={() => setIsEditingInnovationFund(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              ) : (
+                <button
+                  className={styles.commissionEditButton}
+                  onClick={() => setIsEditingInnovationFund(true)}
+                >
+                  <PencilIcon width={16} height={16} /> Editar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {loading && <p>Carregando...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {data && Array.isArray(data.original) && (
+      {data && originalItems.length > 0 && (
         <div className={styles.reportsTableContainer}>
           <table className={styles.reportsTable}>
             <thead className={styles.reportsTableHeader}>
@@ -426,13 +709,13 @@ export default function Page() {
               </tr>
             </thead>
             <tbody className={styles.reportsTableBody}>
-              {data.original.map((item: any) => (
+              {originalItems.map((item) => (
                 <tr key={item.id} className={styles.reportsTableRow}>
                   <td className={styles.reportsTableCell}>{item.index}</td>
                   <td className={styles.reportsTableCell}>{item.service}</td>
                   <td className={styles.reportsTableCell}>
                     {
-                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount ?? 0)
+                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.amount ?? 0))
                     }
                   </td>
                   <td className={styles.reportsTableCell}>
@@ -494,9 +777,9 @@ export default function Page() {
                       const planned = plannedMap[item.id];
                       if (planned === null || planned === undefined) {
                         // Se não há planejado, exibe o realizado
-                        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount ?? 0);
+                        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.amount ?? 0));
                       }
-                      const result = Math.abs((item.amount ?? 0) - planned);
+                      const result = Math.abs(Number(item.amount ?? 0) - planned);
                       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result);
                     })()}
                   </td>
@@ -556,5 +839,13 @@ export default function Page() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Carregando...</div>}>
+      <ReportsContent />
+    </Suspense>
   );
 }

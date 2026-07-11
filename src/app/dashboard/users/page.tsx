@@ -1,3 +1,5 @@
-export default function Page() {
-  return <p>Users Page</p>;
+import { UsersListContent } from '@/components/users/UsersListContent';
+
+export default function UsersPage() {
+  return <UsersListContent />;
 }

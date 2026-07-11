@@ -1,15 +1,13 @@
-import { useMemo } from "react";
+import { useMemo } from 'react';
+import { getAmountFromOriginal } from '@/lib/financial/amounts';
+import type { RealtimeReportResponse } from '@/types/properfy';
 
-export function useImpostos(apiData: any) {
+export function useImpostos(apiData: RealtimeReportResponse | null) {
   return useMemo(() => {
-    if (!apiData) return 0;
-    const original = apiData.original || [];
-    const getAmount = (idx: string) => {
-      const found = original.find((item: any) => item.index === idx);
-      return found ? Number(found.amount) : 0;
-    };
-    const impostosFederais = getAmount("1.2.4.1");
-    const impostosMunicipais = getAmount("1.2.4.2");
+    if (!apiData?.original) return 0;
+    const original = apiData.original;
+    const impostosFederais = getAmountFromOriginal(original, '1.2.4.1');
+    const impostosMunicipais = getAmountFromOriginal(original, '1.2.4.2');
     return impostosFederais + impostosMunicipais;
   }, [apiData]);
 }

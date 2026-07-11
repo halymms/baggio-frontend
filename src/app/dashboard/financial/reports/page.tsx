@@ -4,9 +4,17 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link'
 import { realtimeReportData, getItemData, upsertItemData, getMonthlyClosing, upsertMonthlyClosing, getManagerCommission, upsertManagerCommission, getInnovationFund, upsertInnovationFund } from '@/services/api';
+import type { RealtimeReportParams, RealtimeReportResponse, ReportIndexItem } from '@/types/properfy';
+import { FINANCIAL_COMPANY_IDS } from '@/lib/financial/constants';
 import { PencilIcon, DocumentCheckIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 
 import styles from './reports.module.scss';
+
+type ReportOriginalItem = ReportIndexItem & { id: number };
+
+function isReportOriginalItem(item: ReportIndexItem): item is ReportOriginalItem {
+  return typeof item.id === 'number';
+}
 
 async function fetchObservacao(itemId: number, mes: number, ano: number) {
   const data = await getItemData(itemId, mes, ano);
@@ -35,21 +43,19 @@ async function saveObservacao(itemId: number, observacao: string, mes: number, a
 }
 // Função para buscar todos os realizados do ano, agrupando por index, de forma sequencial
 async function fetchRealizadoMediaAnoPorIndex(ano: number, companies: number[], onPartialUpdate?: (partial: Record<string, number[]>) => void) {
+  void companies;
   const meses = Array.from({ length: 12 }, (_, i) => i);
   const realizadoPorIndex: Record<string, number[]> = {};
   for (const mes of meses) {
     const startDate = new Date(ano, mes, 1);
     const endDate = new Date(ano, mes + 1, 0);
-    const body = {
+    const body: RealtimeReportParams = {
       section: null,
-      companies,
-      dteRange: [
-        startDate.toISOString(),
-        endDate.toISOString()
-      ]
+      companies: [...FINANCIAL_COMPANY_IDS],
+      dteRange: [startDate.toISOString(), endDate.toISOString()],
     };
     const res = await realtimeReportData(body);
-    const mesItens = Array.isArray(res?.original) ? res.original : [];
+    const mesItens = res.original ?? [];
     for (const item of mesItens) {
       if (!item.index) continue;
       if (!realizadoPorIndex[item.index]) realizadoPorIndex[item.index] = [];
@@ -114,7 +120,7 @@ function ReportsContent() {
   const [editingObsId, setEditingObsId] = useState<number | null>(null);
   const [editObsValue, setEditObsValue] = useState<string>("");
 
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<RealtimeReportResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Para edição inline
@@ -250,32 +256,36 @@ function ReportsContent() {
     setError(null);
     const startDate = new Date(Number(year), Number(month), 1);
     const endDate = new Date(Number(year), Number(month) + 1, 0);
-    const body = {
-      section: selectedSection ? Number(selectedSection) : null,
-      companies: [1, 3, 4, 5, 6, 8, 9],
-      dteRange: [
-        startDate.toISOString(),
-        endDate.toISOString()
-      ]
+    const body: RealtimeReportParams = {
+      section: selectedSection as RealtimeReportParams['section'],
+      companies: [...FINANCIAL_COMPANY_IDS],
+      dteRange: [startDate.toISOString(), endDate.toISOString()],
     };
     realtimeReportData(body)
       .then((res) => {
         setData(res);
       })
-      .catch((err) => {
+      .catch(() => {
         setError('Erro ao buscar dados');
         setData(null);
       })
       .finally(() => setLoading(false));
   }, [month, year, selectedSection]);
 
+  const originalItems: ReportOriginalItem[] = (data?.original ?? [])
+    .filter(isReportOriginalItem);
+
   // Carrega planejados apenas quando data.original muda
   useEffect(() => {
-    if (!data || !Array.isArray(data.original) || !month || !year) return;
+    if (!month || !year) return;
+    const currentItems: ReportOriginalItem[] = (data?.original ?? []).filter(
+      isReportOriginalItem
+    );
+    if (currentItems.length === 0) return;
     let isMounted = true;
     const mesNum = Number(month);
     const anoNum = Number(year);
-    Promise.all(data.original.map(async (item: any) => {
+    Promise.all(currentItems.map(async (item) => {
       const planned = await fetchPlanned(item.id, mesNum, anoNum);
       return [item.id, planned];
     })).then(entries => {
@@ -305,11 +315,15 @@ function ReportsContent() {
   }, [data, year, loading]);
 
   useEffect(() => {
-    if (!data || !Array.isArray(data.original) || !month || !year) return;
+    if (!month || !year) return;
+    const currentItems: ReportOriginalItem[] = (data?.original ?? []).filter(
+      isReportOriginalItem
+    );
+    if (currentItems.length === 0) return;
     let isMounted = true;
     const mesNum = Number(month);
     const anoNum = Number(year);
-    Promise.all(data.original.map(async (item: any) => {
+    Promise.all(currentItems.map(async (item) => {
       const obs = await fetchObservacao(item.id, mesNum, anoNum);
       return [item.id, obs];
     })).then(entries => {
@@ -680,7 +694,7 @@ function ReportsContent() {
       )}
       {loading && <p>Carregando...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {data && Array.isArray(data.original) && (
+      {data && originalItems.length > 0 && (
         <div className={styles.reportsTableContainer}>
           <table className={styles.reportsTable}>
             <thead className={styles.reportsTableHeader}>
@@ -695,13 +709,13 @@ function ReportsContent() {
               </tr>
             </thead>
             <tbody className={styles.reportsTableBody}>
-              {data.original.map((item: any) => (
+              {originalItems.map((item) => (
                 <tr key={item.id} className={styles.reportsTableRow}>
                   <td className={styles.reportsTableCell}>{item.index}</td>
                   <td className={styles.reportsTableCell}>{item.service}</td>
                   <td className={styles.reportsTableCell}>
                     {
-                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount ?? 0)
+                      new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.amount ?? 0))
                     }
                   </td>
                   <td className={styles.reportsTableCell}>
@@ -763,9 +777,9 @@ function ReportsContent() {
                       const planned = plannedMap[item.id];
                       if (planned === null || planned === undefined) {
                         // Se não há planejado, exibe o realizado
-                        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.amount ?? 0);
+                        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.amount ?? 0));
                       }
-                      const result = Math.abs((item.amount ?? 0) - planned);
+                      const result = Math.abs(Number(item.amount ?? 0) - planned);
                       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(result);
                     })()}
                   </td>

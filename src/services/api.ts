@@ -160,8 +160,8 @@ export async function openFinancialStatement(
 export async function openFinancialStatementDelinquency(
   month: number,
   year: number
-): Promise<any> {
-  return fetchJson<any>('/api/properfy/open-financial-statement/delinquency', {
+): Promise<unknown> {
+  return fetchJson<unknown>('/api/properfy/open-financial-statement/delinquency', {
     method: 'POST',
     body: JSON.stringify({ month, year }),
   });

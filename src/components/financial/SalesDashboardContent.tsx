@@ -402,9 +402,8 @@ export function SalesDashboardContent({
             for (const m of months) {
                 const body = buildRealtimeReportBody(selectedSection, queryYear, m.value);
                 try {
-                    const [res, closingData, managerData, innovationData] = await Promise.all([
+                    const [res, managerData, innovationData] = await Promise.all([
                         realtimeReportData(body),
-                        getMonthlyClosing(m.value, queryYear),
                         getManagerCommission(m.value, queryYear, 2).catch(() => null),
                         getInnovationFund(m.value, queryYear).catch(() => null)
                     ]);
@@ -418,7 +417,6 @@ export function SalesDashboardContent({
                     const salarios = getAmount("1.2.2.1.14");
                     const gratificacoesPremiacoes = getAmount("1.2.2.5");
                     const comissaoLocacaoImoveis = getAmount("1.2.2.3");
-                    const despesasGerais = getAmount("1.2.1.1");
                     const telefones = getAmount("1.2.1.2");
                     const entidadesDeClasses = getAmount("1.2.1.3");
                     const materiais = getAmount("1.2.1.4");
@@ -433,7 +431,6 @@ export function SalesDashboardContent({
                     const copaCozinha = getAmount("1.2.1.13");
                     const comemoracoes = getAmount("1.2.1.14");
                     const viagens = getAmount("1.2.1.16");
-                    const locacaoMaquinasEquipamentos = getAmount("1.2.9.2.3");
                     const tarifasBancarias = getAmount("1.2.3.1");
                     const tarifaCartaoCredito = getAmount("1.2.3.3");
                     const impostosFederais = getAmount("1.2.4.1");
@@ -446,10 +443,7 @@ export function SalesDashboardContent({
                     const investimentosVals = getAmount("1.2.9.4");
                     const taxas = getAmount("1.2.4.3");
                     const despesasNormais =
-                        // despesasGerais removed
                         telefones + entidadesDeClasses + materiais + propagandaPublicidadeInstitucional + propagandaPublicidadeProduto + despesasComVeiculos + seguros + assessorias + servicos + manutencoes + doacoes + copaCozinha + comemoracoes + viagens + tarifasBancarias + jurosPagos + tarifaCartaoCredito + impostosFederais + impostosMunicipais + prejuizos + bens + direitos + investimentosVals + taxas;
-
-                    const comissoesReceber = closingData?.comissoes_receber ? Number(closingData.comissoes_receber) : 0;
 
                     const receitaBruta =
                       receita?.amount != null ? Number(receita.amount) : null;
@@ -516,7 +510,7 @@ export function SalesDashboardContent({
                         fundoInovacaoFetched: localFundoInovacao,
                         resultadoLiquido,
                         folhaPagamento,
-                        investimentos,
+                        investimentos: investimentosVals,
                         impostos,
                         totalDespesas,
                         lucroLiquido,
@@ -546,7 +540,7 @@ export function SalesDashboardContent({
             setAnnualClosingData(results);
         }
         fetchMonthsSequentially();
-    }, [queryYear]);
+    }, [queryYear, selectedSection]);
 
 
     useEffect(() => {
@@ -571,7 +565,7 @@ export function SalesDashboardContent({
             }).catch(() => ({ day: String(i + 1), taxaAdministracao: 0, taxaIntermediacao: 0, bonificacao: 0 }));
         });
         Promise.all(promises).then(setDailyChartData);
-    }, [queryYear, selectedAnnualMonth]);
+    }, [queryYear, selectedAnnualMonth, selectedSection]);
 
     // Buscar dados mensais para o gráfico anual
     useEffect(() => {
@@ -586,13 +580,13 @@ export function SalesDashboardContent({
                 if (selectedAnnualType === 'taxaIntermediacao') value = getAmount("1.1.1.1.12");
                 if (selectedAnnualType === 'bonificacao') value = getAmount("2.1.1.1.9");
                 return {
-                    month: `${monthAbbr[m.value]}/${selectedYear}`,
+                    month: `${monthAbbr[m.value]}/${queryYear}`,
                     value
                 };
             }).catch(() => ({ month: `${monthAbbr[m.value]}/${queryYear}`, value: 0 }));
         });
         Promise.all(promises).then(setAnnualChartData);
-    }, [queryYear, selectedAnnualType]);
+    }, [queryYear, selectedAnnualType, selectedSection]);
 
     // 5-Year Area Chart Data Fetching
     const [fiveYearData, setFiveYearData] = useState<FiveYearRow[]>([]);
@@ -638,7 +632,7 @@ export function SalesDashboardContent({
         };
 
         fetchAllData();
-    }, []);
+    }, [selectedSection]);
 
     // Fetch 5-Year Data for Stacked Area Chart
     useEffect(() => {
@@ -656,7 +650,6 @@ export function SalesDashboardContent({
 
                 const promises = monthsToFetch.map(async (m) => {
                     const startDate = new Date(year, m.value, 1);
-                    const endDate = new Date(year, m.value + 1, 0);
 
                     try {
                         const body = buildRealtimeReportBody(
@@ -676,7 +669,6 @@ export function SalesDashboardContent({
                         const salarios = getAmount("1.2.2.1.14");
                         const gratificacoesPremiacoes = getAmount("1.2.2.5");
                         const comissaoLocacaoImoveis = getAmount("1.2.2.3");
-                        const despesasGerais = getAmount("1.2.1.1");
                         const telefones = getAmount("1.2.1.2");
                         const entidadesDeClasses = getAmount("1.2.1.3");
                         const materiais = getAmount("1.2.1.4");
@@ -691,11 +683,9 @@ export function SalesDashboardContent({
                         const copaCozinha = getAmount("1.2.1.13");
                         const comemoracoes = getAmount("1.2.1.14");
                         const viagens = getAmount("1.2.1.16");
-                        const locacaoMaquinasEquipamentos = getAmount("1.2.9.2.3");
                         const tarifasBancarias = getAmount("1.2.3.1");
                         const tarifaCartaoCredito = getAmount("1.2.3.3");
                         const impostosData = getAmount("1.2.4");
-                        const impostos = impostosData;
                         const doacoes = getAmount("1.2.1.12");
                         const jurosPagos = getAmount("1.2.3.2");
                         const prejuizos = getAmount("1.2.8");
@@ -705,7 +695,6 @@ export function SalesDashboardContent({
                         const taxas = getAmount("1.2.4.3");
                         const comissaoVendaEfetuada = getAmount("1.2.2.4.4");
                         const despesasNormais =
-                            // despesasGerais removed
                             telefones + entidadesDeClasses + materiais + propagandaPublicidadeInstitucional + propagandaPublicidadeProduto + despesasComVeiculos + seguros + assessorias + servicos + manutencoes + doacoes + copaCozinha + comemoracoes + viagens + tarifasBancarias + jurosPagos + tarifaCartaoCredito + impostosData + prejuizos + bens + direitos + investimentosVals + taxas;
 
                         const primeiroCalcTotalDespesasExtras = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal);
@@ -714,7 +703,6 @@ export function SalesDashboardContent({
                         // Mesma fórmula do topo: folha + outras + gratificações + comissaoLocacao + ajudaCusto - proLabore
                         const totalDespesasPessoal = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(gratificacoesPremiacoes) + Math.abs(comissaoLocacaoImoveis) + Math.abs(ajudaDeCusto) - Math.abs(proLabore);
 
-                        const closingData = await getMonthlyClosing(m.value, year).catch(() => null);
                         const managerData = await getManagerCommission(m.value, year, 2).catch(() => null);
                         const innovationData = await getInnovationFund(m.value, year).catch(() => null);
 
@@ -777,8 +765,7 @@ export function SalesDashboardContent({
         };
 
         fetchAnnualStackedData();
-    }, []);
-
+    }, [selectedSection]);
 
 
 

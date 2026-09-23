@@ -27,6 +27,13 @@ export function calcDespesasPessoal(
   const comissaoDecorrenteVendaImoveis = getAmountFromOriginal(original, '1.2.2.4');
   const comissaoVendaEfetuada = getAmountFromOriginal(original, '1.2.2.4.4');
 
+  console.log('totalDespesasPessoal'	, Math.abs(folhaPagamento) +
+    Math.abs(outrasDespesasPessoal) +
+    Math.abs(gratificacoesPremiacoes) +
+    Math.abs(comissaoLocacaoImoveis) +
+    Math.abs(ajudaDeCusto) -
+    Math.abs(proLabore));
+
   const totalDespesasPessoalExtras =
     Math.abs(folhaPagamento) +
     Math.abs(outrasDespesasPessoal) -

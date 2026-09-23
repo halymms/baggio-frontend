@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { realtimeReportData, getMonthlyClosing } from "@/services/api";
+import { realtimeReportData, getMonthlyClosing, getManagerCommission } from "@/services/api";
 import { FinancialDashboardFilters } from "@/components/financial/FinancialDashboardFilters";
 import { KpiCards } from "@/components/financial/KpiCards";
 import {
@@ -20,7 +20,7 @@ import { useDespesasNormais } from "@/hooks/useDespesasNormais";
 import { useDespesasPessoal } from "@/hooks/useDespesasPessoal";
 import { useImpostos } from "@/hooks/useImpostos";
 import { useInvestimentos } from "@/hooks/useInvestimentos";
-import type { FinancialSection, RealtimeReportResponse, ReportIndexItem } from "@/types/properfy";
+import type { FinancialSection, ManagerCommission, RealtimeReportResponse, ReportIndexItem } from "@/types/properfy";
 import { Tooltip, Legend, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { PieSummaryChart } from '@/components/financial/PieSummaryChart';
 import { AnnualAreaChart } from '@/components/financial/AnnualAreaChart';
@@ -45,6 +45,15 @@ import {
     MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import styles from '@/app/dashboard/financial/financial.module.scss';
+
+/** Lê comissão gestor do Fechamento; `{}` / vazio → null (exibe ---). */
+function parseComissaoGestorFromApi(data: ManagerCommission | null | undefined): number | null {
+    if (!data || data.comissao_gestor === null || data.comissao_gestor === undefined) {
+        return null;
+    }
+    const n = Number(data.comissao_gestor);
+    return Number.isNaN(n) ? null : n;
+}
 
 const months = FINANCIAL_MONTHS;
 const years = FINANCIAL_YEARS;
@@ -123,6 +132,7 @@ export function RentalDashboardContent({
     const [calculoFolhaPagamento, setCalculoFolhaPagamento] = useState<number | null>(null);
     const [lucroLiquido, setLucroLiquido] = useState<number | null>(null);
     const [comissaoGestor, setComissaoGestor] = useState<number | null>(null);
+    const [comissaoGestorFetched, setComissaoGestorFetched] = useState<number | null>(null);
     const [porcetagemRetirada, setPorcentagemRetirada] = useState<number | null>(null);
 
     // States related to Vendas (can be kept or removed if not used)
@@ -166,6 +176,10 @@ export function RentalDashboardContent({
                 setObservacaoClosing("");
             }
         }).catch(() => setError('Não foi possível carregar o fechamento mensal.'));
+
+        getManagerCommission(mesNum, anoNum, 1)
+            .then(data => setComissaoGestorFetched(parseComissaoGestorFromApi(data)))
+            .catch(() => setComissaoGestorFetched(null));
     }, [queryMonth, queryYear]);
 
     useEffect(() => {
@@ -250,6 +264,7 @@ export function RentalDashboardContent({
                 const despesasPessoalCalc = calcDespesasPessoal(original, selectedSection);
                 const totalDespesasPessoalExtrasCalc = despesasPessoalCalc.totalDespesasPessoalExtras;
                 const totalDespesasPessoalCalc = despesasPessoalCalc.totalDespesasPessoal;
+                console.log('totalDespesasPessoal', totalDespesasPessoal);
                 const comissaoFolhaCalc = despesasPessoalCalc.comissaoFolha;
                 const calculoFolhaPagamentoCalc = despesasPessoalCalc.folhaPagamentoFinal;
 
@@ -299,44 +314,9 @@ export function RentalDashboardContent({
                     setVendaValorFixo(resultadoFixo);
                 }
 
-                let comissaoGestorCalc = 0;
-                if (lucroLiquidoCalc) {
-                    console.log("Lucro Liquido", lucroLiquidoCalc);
-                    comissaoGestorCalc = lucroLiquidoCalc * 0.213;
-                    setComissaoGestor(comissaoGestorCalc);
-                }
-                if (receitaLiquida) {
-                    setFundoInovacao(receitaLiquida * 0.05);
-                }
-
-                if (impostos || fundoInovacao || comissoesReceber || comissaoVendaEfetuada) {
-                    const resultadoVariavel = Math.abs(impostos) + Math.abs(fundoInovacao) + Math.abs(comissaoVendaEfetuada) + Math.abs(comissoesReceber);
+                if (impostosTotal || fundoInovacaoCalc || comissoesReceber || comissaoVendaEfetuada) {
+                    const resultadoVariavel = Math.abs(impostosTotal) + Math.abs(fundoInovacaoCalc) + Math.abs(comissaoVendaEfetuada) + Math.abs(comissoesReceber);
                     setVendaVariavel(resultadoVariavel);
-                }
-                if (receitaBruta && totalDespesas) {
-                    setMargemContribuicao(Math.abs(receitaBruta) + Math.abs(totalDespesas));
-                }
-                if (margemContribuicao && receitaBruta) {
-                    const resultadoMC = margemContribuicao / receitaBruta;
-                    setMargemContribuicaoPorcento(resultadoMC);
-                }
-                if (vendaValorFixo && margemContribuicaoPorcento) {
-                    const resultadoMV = -vendaValorFixo / margemContribuicaoPorcento;
-                    setPontoEquilibrio(resultadoMV);
-                }
-                if (totalDespesasPessoalExtrasCalc || despesasNormais || comissaoGestorCalc || fundoInovacao || comissaoFolhaCalc || investimentosVals || salarios) {
-                    const calculoTotalDespesas = Math.abs(totalDespesasPessoalExtrasCalc ?? 0) + Math.abs(salarios ?? 0) + Math.abs(comissaoFolhaCalc ?? 0) + Math.abs(despesasNormais ?? 0) + Math.abs(fundoInovacao ?? 0) + Math.abs(investimentosVals ?? 0) + Math.abs(comissaoGestorCalc ?? 0);
-                    setTotalDespesas(calculoTotalDespesas);
-                }
-
-                if (resultadoLiquidoCalc || calculoFolhaPagamentoCalc || investimentosVals || comissaoGestorCalc) {
-                    const retiradaCalc = (resultadoLiquidoCalc ?? 0) - Math.abs(calculoFolhaPagamentoCalc ?? 0) - Math.abs(investimentosVals ?? 0) - Math.abs(comissaoGestorCalc ?? 0);
-                    setRetirada(retiradaCalc);
-
-                    if (receita?.amount) {
-                        const porcentagemRetiradaCalc = Math.abs(retiradaCalc) / Math.abs(Number(receita.amount)) * 100;
-                        setPorcentagemRetirada(porcentagemRetiradaCalc);
-                    }
                 }
             })
             .catch(() => {
@@ -349,15 +329,74 @@ export function RentalDashboardContent({
         queryMonth,
         queryYear,
         selectedSection,
-        totalDespesasPessoal,
-        totalDespesasPessoalExtras,
-        fundoInovacao,
-        impostos,
-        lucroLiquido,
         despesasNormaisFromHook,
         despesasPessoalFromHook,
         impostosFromHook,
         investimentosFromHook,
+        comissoesReceber,
+    ]);
+
+    // Aplica comissão do Fechamento (reports, section=1) nos KPIs de locação
+    useEffect(() => {
+        setComissaoGestor(comissaoGestorFetched);
+
+        const salarios = despesasPessoalFromHook.salarios;
+        const extras = totalDespesasPessoalExtras ?? 0;
+        const comissaoFolhaVal = comissaoFolha ?? 0;
+        const despesasNormaisVal = despesasNormais ?? 0;
+        const fundoVal = fundoInovacao ?? 0;
+        const investVal = investimentos ?? 0;
+        const comissaoAbs = Math.abs(comissaoGestorFetched ?? 0);
+
+        const hasDespesasBase =
+            totalDespesasPessoalExtras != null ||
+            despesasNormais != null ||
+            comissaoFolha != null ||
+            investimentos != null ||
+            comissaoGestorFetched != null ||
+            fundoInovacao !== 0;
+
+        if (hasDespesasBase) {
+            setTotalDespesas(
+                Math.abs(extras) +
+                Math.abs(salarios) +
+                Math.abs(comissaoFolhaVal) +
+                Math.abs(despesasNormaisVal) +
+                Math.abs(fundoVal) +
+                Math.abs(investVal) +
+                comissaoAbs
+            );
+        }
+
+        const hasRetiradaBase =
+            resultadoLiquido != null ||
+            calculoFolhaPagamento != null ||
+            investimentos != null ||
+            comissaoGestorFetched != null;
+
+        if (hasRetiradaBase) {
+            const retiradaCalc =
+                (resultadoLiquido ?? 0) -
+                Math.abs(calculoFolhaPagamento ?? 0) -
+                Math.abs(investVal) -
+                comissaoAbs;
+            setRetirada(retiradaCalc);
+
+            if (receitaBruta) {
+                setPorcentagemRetirada(Math.abs(retiradaCalc) / Math.abs(receitaBruta) * 100);
+            }
+        }
+    }, [
+        comissaoGestorFetched,
+        totalDespesasPessoalExtras,
+        comissaoFolha,
+        despesasNormais,
+        fundoInovacao,
+        investimentos,
+        resultadoLiquido,
+        calculoFolhaPagamento,
+        receitaBruta,
+        despesasPessoalFromHook.salarios,
     ]);
 
     useEffect(() => {
@@ -367,9 +406,10 @@ export function RentalDashboardContent({
             for (const m of months) {
                 const body = buildRealtimeReportBody(selectedSection, queryYear, m.value);
                 try {
-                    const [res, closingData] = await Promise.all([
+                    const [res, closingData, managerData] = await Promise.all([
                         realtimeReportData(body),
-                        getMonthlyClosing(m.value, queryYear)
+                        getMonthlyClosing(m.value, queryYear),
+                        getManagerCommission(m.value, queryYear, 1).catch(() => null)
                     ]);
                     const receita = res.receitas?.find((r) => r.index === "1.1");
                     const despesa = res.despesas?.find((d) => d.index === "1.2");
@@ -449,19 +489,17 @@ export function RentalDashboardContent({
                         lucroLiquido = Math.abs(resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentos ?? 0);
                     }
 
-                    let comissaoGestor = 0;
-                    if (lucroLiquido) {
-                        comissaoGestor = lucroLiquido * 0.213;
-                    }
+                    let comissaoGestor = parseComissaoGestorFromApi(managerData);
+                    const comissaoAbs = Math.abs(comissaoGestor ?? 0);
 
                     let retirada = 0;
-                    if (resultadoLiquido || calculoFolhaPagamento || investimentos || comissaoGestor) {
-                        retirada = (resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentos ?? 0) - Math.abs(comissaoGestor ?? 0);
+                    if (resultadoLiquido || calculoFolhaPagamento || investimentos || comissaoGestor != null) {
+                        retirada = (resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentos ?? 0) - comissaoAbs;
                     }
 
                     let calculoTotalDespesas = 0;
-                    if (totalDespesasPessoalExtras || despesasNormais || comissaoGestor || fundoInovacao || comissaoFolha || investimentos || salarios) {
-                        calculoTotalDespesas = Math.abs(totalDespesasPessoalExtras ?? 0) + Math.abs(salarios ?? 0) + Math.abs(comissaoFolha ?? 0) + Math.abs(despesasNormais ?? 0) + Math.abs(fundoInovacao ?? 0) + Math.abs(investimentos ?? 0) + Math.abs(comissaoGestor ?? 0);
+                    if (totalDespesasPessoalExtras || despesasNormais || comissaoGestor != null || fundoInovacao || comissaoFolha || investimentos || salarios) {
+                        calculoTotalDespesas = Math.abs(totalDespesasPessoalExtras ?? 0) + Math.abs(salarios ?? 0) + Math.abs(comissaoFolha ?? 0) + Math.abs(despesasNormais ?? 0) + Math.abs(fundoInovacao ?? 0) + Math.abs(investimentos ?? 0) + comissaoAbs;
                     }
 
                     results.push({
@@ -693,21 +731,21 @@ export function RentalDashboardContent({
                             lucroLiquido = Math.abs(resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentos ?? 0);
                         }
 
-                        let comissaoGestor = 0;
-                        if (lucroLiquido) {
-                            comissaoGestor = lucroLiquido * 0.208;
-                        }
+                        const comissaoGestor = parseComissaoGestorFromApi(
+                            await getManagerCommission(m.value, year, 1).catch(() => null)
+                        );
+                        const comissaoAbs = Math.abs(comissaoGestor ?? 0);
 
                         const closingData = await getMonthlyClosing(m.value, year).catch(() => null);
 
                         let calculoTotalDespesas = 0;
-                        if (totalDespesasPessoalExtras || despesasNormais || comissaoGestor || fundoInovacao || comissaoFolha || investimentos || salarios) {
-                            calculoTotalDespesas = Math.abs(totalDespesasPessoalExtras ?? 0) + Math.abs(salarios ?? 0) + Math.abs(comissaoFolha ?? 0) + Math.abs(despesasNormais ?? 0) + Math.abs(fundoInovacao ?? 0) + Math.abs(investimentos ?? 0) + Math.abs(comissaoGestor ?? 0);
+                        if (totalDespesasPessoalExtras || despesasNormais || comissaoGestor != null || fundoInovacao || comissaoFolha || investimentos || salarios) {
+                            calculoTotalDespesas = Math.abs(totalDespesasPessoalExtras ?? 0) + Math.abs(salarios ?? 0) + Math.abs(comissaoFolha ?? 0) + Math.abs(despesasNormais ?? 0) + Math.abs(fundoInovacao ?? 0) + Math.abs(investimentos ?? 0) + comissaoAbs;
                         }
 
                         let retirada = 0;
-                        if (resultadoLiquido || calculoFolhaPagamento || investimentos || comissaoGestor) {
-                            retirada = (resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentos ?? 0) - Math.abs(comissaoGestor ?? 0);
+                        if (resultadoLiquido || calculoFolhaPagamento || investimentos || comissaoGestor != null) {
+                            retirada = (resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentos ?? 0) - comissaoAbs;
                         }
 
                         return {
@@ -784,7 +822,7 @@ export function RentalDashboardContent({
                             totalDespesasPessoal ?? 0,
                             folhaDePagamento ?? 0,
                             fundoInovacao ?? 0,
-                            comissoesReceber ?? 0,
+                            comissaoGestor ?? 0,
                             investimentos ?? 0,
                             retirada ?? 0,
                         ]}
@@ -848,7 +886,7 @@ export function RentalDashboardContent({
                             COMISSÃO GESTÃO
                         </span>
                         <br />
-                        {comissaoGestor !== null ? formatBRL(comissaoGestor) : '---'}
+                        {comissaoGestor !== null ? formatBRL(-Math.abs(comissaoGestor)) : '---'}
                     </div>
                     <div className={styles.despesasPessoalInfoItem}>
                         <span className={styles.despesasPessoalInfoLabel}>

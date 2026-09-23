@@ -23,6 +23,7 @@ const baseLinks = [
       { name: 'Locação', href: '/dashboard/financial/rentals' },
       { name: 'Vendas', href: '/dashboard/financial/sales' },
       { name: 'Fluxo de Caixa', href: '/dashboard/financial/cash-flow' },
+      { name: 'Inadimplência', href: '/dashboard/financial/inadimplencia' },
     ]
   },
   { name: 'Usuários', href: '/dashboard/users', icon: UserGroupIcon, adminOnly: true },

@@ -206,6 +206,7 @@ function ReportsContent() {
       const dataManagerCommission = {
         mes: Number(month),
         ano: Number(year),
+        section: selectedSection as 1 | 2,
         comissao_gestor: parseCurrency(comissaoGestor),
         observacao: observacaoGestor
       };
@@ -376,7 +377,7 @@ function ReportsContent() {
     const mesNum = Number(month);
     const anoNum = Number(year);
 
-    getManagerCommission(mesNum, anoNum).then(data => {
+    getManagerCommission(mesNum, anoNum, selectedSection as 1 | 2).then(data => {
       if (isMounted) {
         const hasData = data && (
           data.comissao_gestor !== null && data.comissao_gestor !== undefined ||
@@ -397,7 +398,7 @@ function ReportsContent() {
     });
 
     return () => { isMounted = false; };
-  }, [month, year]);
+  }, [month, year, selectedSection]);
 
   // Load innovation fund data
   useEffect(() => {
@@ -560,7 +561,7 @@ function ReportsContent() {
       )}
 
       {/* Manager Commission Section */}
-      {month && year && selectedSection == 2 && (
+      {month && year && (selectedSection == 1 || selectedSection == 2) && (
         <div className={styles.commissionContainer}>
           <h3 className={styles.commissionTitle}>Comissão de Gestores</h3>
           <div className={styles.commissionEditContainer}>

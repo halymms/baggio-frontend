@@ -176,7 +176,7 @@ export function SalesDashboardContent({
             }
         }).catch(() => setError('Não foi possível carregar o fechamento mensal.'));
 
-        getManagerCommission(mesNum, anoNum).then(data => {
+        getManagerCommission(mesNum, anoNum, 2).then(data => {
             if (data && data.comissao_gestor !== null && data.comissao_gestor !== undefined) {
                 setComissaoGestorFetched(Number(data.comissao_gestor));
             } else {
@@ -405,7 +405,7 @@ export function SalesDashboardContent({
                     const [res, closingData, managerData, innovationData] = await Promise.all([
                         realtimeReportData(body),
                         getMonthlyClosing(m.value, queryYear),
-                        getManagerCommission(m.value, queryYear).catch(() => null),
+                        getManagerCommission(m.value, queryYear, 2).catch(() => null),
                         getInnovationFund(m.value, queryYear).catch(() => null)
                     ]);
                     const receita = res.receitas?.find((r) => r.index === "1.1");
@@ -715,7 +715,7 @@ export function SalesDashboardContent({
                         const totalDespesasPessoal = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(gratificacoesPremiacoes) + Math.abs(comissaoLocacaoImoveis) + Math.abs(ajudaDeCusto) - Math.abs(proLabore);
 
                         const closingData = await getMonthlyClosing(m.value, year).catch(() => null);
-                        const managerData = await getManagerCommission(m.value, year).catch(() => null);
+                        const managerData = await getManagerCommission(m.value, year, 2).catch(() => null);
                         const innovationData = await getInnovationFund(m.value, year).catch(() => null);
 
                         let comissaoGestor = 0;

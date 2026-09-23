@@ -1,0 +1,167 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.6rem;
+  color: #111827;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  color: #6b7280;
+  max-width: 720px;
+}
+
+.refreshButton {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  background: #111827;
+  color: white;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.actionsGroup {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.summaryCard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+}
+
+.summaryLabel {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.summaryValue {
+  margin: 0.25rem 0 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.stateCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 1.25rem;
+  color: #374151;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1280px;
+}
+
+.table th,
+.table td {
+  padding: 0.9rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.95rem;
+  vertical-align: middle;
+}
+
+.table th {
+  background: #f9fafb;
+  color: #374151;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+.inlineEdit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 180px;
+}
+
+.numberInput {
+  width: 110px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.9rem;
+}
+
+.smallButton {
+  border: 0;
+  border-radius: 8px;
+  padding: 0.45rem 0.7rem;
+  background: #111827;
+  color: white;
+  cursor: pointer;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.smallButton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.detailTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #111827;
+}

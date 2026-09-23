@@ -181,7 +181,7 @@ export async function getInadimplenciaPagos(params?: {
   includeItems?: boolean;
 }): Promise<{
   filtro: { chrFsStatus: string[] };
-  data?: InadimplenciaPagosRow[];
+  data?: InadimplenciaPagosRow[] | InadimplenciaRow[];
   mes?: number;
   ano?: number;
   label?: string;
@@ -189,7 +189,6 @@ export async function getInadimplenciaPagos(params?: {
   valor_pago_atual?: number | null;
   total?: number | null;
   count?: number | null;
-  data?: InadimplenciaRow[];
   [key: string]: unknown;
 }> {
   const query = new URLSearchParams();

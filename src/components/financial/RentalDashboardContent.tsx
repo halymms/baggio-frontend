@@ -489,7 +489,7 @@ export function RentalDashboardContent({
                         lucroLiquido = Math.abs(resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentos ?? 0);
                     }
 
-                    let comissaoGestor = parseComissaoGestorFromApi(managerData);
+                    const comissaoGestor = parseComissaoGestorFromApi(managerData);
                     const comissaoAbs = Math.abs(comissaoGestor ?? 0);
 
                     let retirada = 0;

@@ -1,4 +1,6 @@
-export const FINANCIAL_COMPANY_IDS = [1, 3, 4, 5, 6, 8, 9] as const;
+// A Properfy interpreta a lista vazia como todas as empresas disponíveis
+// para o usuário autenticado, incluindo empresas adicionadas futuramente.
+export const FINANCIAL_COMPANY_IDS: number[] = [];
 
 export const FINANCIAL_MONTHS = [
   { value: 0, label: 'Janeiro' },

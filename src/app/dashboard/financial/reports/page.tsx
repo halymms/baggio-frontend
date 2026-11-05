@@ -232,6 +232,7 @@ function ReportsContent() {
       const dataInnovationFund = {
         mes: Number(month),
         ano: Number(year),
+        section: selectedSection as 1 | 2,
         fundo_inovacao: parseCurrency(fundoInovacao),
         observacao: observacaoFundoInovacao
       };
@@ -407,7 +408,7 @@ function ReportsContent() {
     const mesNum = Number(month);
     const anoNum = Number(year);
 
-    getInnovationFund(mesNum, anoNum).then(data => {
+    getInnovationFund(mesNum, anoNum, selectedSection as 1 | 2).then(data => {
       if (isMounted) {
         const hasData = data && (
           data.fundo_inovacao !== null && data.fundo_inovacao !== undefined ||
@@ -415,7 +416,11 @@ function ReportsContent() {
         );
 
         if (hasData) {
-          setFundoInovacao(data.fundo_inovacao ? formatCurrency(data.fundo_inovacao) : "");
+          setFundoInovacao(
+            data.fundo_inovacao !== null && data.fundo_inovacao !== undefined
+              ? formatCurrency(Number(data.fundo_inovacao))
+              : ""
+          );
           setObservacaoFundoInovacao(data.observacao || "");
           setIsEditingInnovationFund(false);
         } else {
@@ -427,7 +432,7 @@ function ReportsContent() {
     });
 
     return () => { isMounted = false; };
-  }, [month, year]);
+  }, [month, year, selectedSection]);
 
   return (
     <div className={styles.reportsPage}>
@@ -627,8 +632,8 @@ function ReportsContent() {
         </div>
       )}
 
-      {/* Innovation Fund Section */}
-      {month && year && selectedSection == 2 && (
+      {/* Innovation Fund Section — locação e vendas, por mês e ano */}
+      {month && year && (selectedSection == 1 || selectedSection == 2) && (
         <div className={styles.commissionContainer}>
           <h3 className={styles.commissionTitle}>Fundo de Inovação</h3>
           <div className={styles.commissionEditContainer}>

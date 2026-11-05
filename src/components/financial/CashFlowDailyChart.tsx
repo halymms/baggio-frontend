@@ -1,56 +1,68 @@
 'use client';
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  ReferenceLine,
-} from 'recharts';
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatBRL } from '@/lib/financial/format';
 import type { CashFlowChartDatum } from '@/lib/financial/cashFlowChart';
 import styles from '@/app/dashboard/financial/financial.module.scss';
 
-const POSITIVE_COLOR = '#00a63e';
-const NEGATIVE_COLOR = '#e7000b';
+const AREA_COLOR = '#8ecdf8';
+const LINE_COLOR = '#2b8fd6';
 
 interface CashFlowDailyChartProps {
   data: CashFlowChartDatum[];
   monthLabel: string;
-  year: number;
+  empty?: boolean;
 }
 
 export function CashFlowDailyChart({
   data,
   monthLabel,
-  year,
+  empty = false,
 }: CashFlowDailyChartProps) {
+  const min = data.reduce((acc, item) => Math.min(acc, item.valor), 0);
+  const max = data.reduce((acc, item) => Math.max(acc, item.valor), 0);
+  const domainMax = max === 0 && min === 0 ? 1 : max;
+
   return (
     <div className={styles.cashFlowChartCard}>
-      <h2 className={styles.chartTitle}>
-        Fluxo de Caixa Diário - {monthLabel} {year}
-      </h2>
-      <ResponsiveContainer width="100%" height={350}>
-        <BarChart data={data} margin={{ top: 20, right: 30, left: 10, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="dia" tick={{ fontSize: 11 }} />
-          <YAxis tickFormatter={(v: number) => formatBRL(v)} tick={{ fontSize: 11 }} />
-          <Tooltip formatter={(value: number) => formatBRL(value)} labelFormatter={(dia) => `Dia ${dia}`} />
-          <ReferenceLine y={0} stroke="#94a3b8" />
-          <Bar dataKey="valor" name="Total" radius={[4, 4, 0, 0]}>
-            {data.map((entry, index) => (
-              <Cell
-                key={`cell-${index}`}
-                fill={entry.valor >= 0 ? POSITIVE_COLOR : NEGATIVE_COLOR}
-              />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <h2 className={styles.chartTitle}>Saldo do Dia</h2>
+      {empty ? (
+        <p className={styles.cashFlowEmpty}>Selecione ao menos um banco para ver o saldo.</p>
+      ) : (
+        <ResponsiveContainer width="100%" height={360}>
+          <AreaChart data={data} margin={{ top: 8, right: 12, left: 8, bottom: 28 }}>
+            <XAxis
+              dataKey="dia"
+              tick={{ fontSize: 12, fill: '#475569' }}
+              tickLine={false}
+              axisLine={{ stroke: '#cbd5e1' }}
+              label={{
+                value: monthLabel.toLocaleLowerCase('pt-BR'),
+                position: 'insideBottom',
+                offset: -18,
+                fill: '#1e293b',
+                fontSize: 14,
+              }}
+            />
+            <YAxis hide domain={[min, domainMax]} />
+            <Tooltip
+              formatter={(value: number) => [formatBRL(Number(value)), 'Saldo']}
+              labelFormatter={(dia) => `Dia ${dia}`}
+            />
+            <Area
+              type="linear"
+              dataKey="valor"
+              name="Saldo"
+              stroke={LINE_COLOR}
+              strokeWidth={2}
+              fill={AREA_COLOR}
+              fillOpacity={0.95}
+              baseValue={0}
+              dot={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

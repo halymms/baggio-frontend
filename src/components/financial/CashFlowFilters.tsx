@@ -1,9 +1,12 @@
-import { FINANCIAL_MONTHS, CASH_FLOW_YEARS } from '@/lib/financial/constants';
+import { FINANCIAL_MONTHS } from '@/lib/financial/constants';
 import styles from '@/app/dashboard/financial/financial.module.scss';
 
 interface CashFlowFiltersProps {
   selectedMonth: number;
   selectedYear: number;
+  months: number[];
+  years: number[];
+  disabled?: boolean;
   onMonthChange: (month: number) => void;
   onYearChange: (year: number) => void;
 }
@@ -11,20 +14,26 @@ interface CashFlowFiltersProps {
 export function CashFlowFilters({
   selectedMonth,
   selectedYear,
+  months = [],
+  years = [],
+  disabled = false,
   onMonthChange,
   onYearChange,
 }: CashFlowFiltersProps) {
+  const monthOptions = FINANCIAL_MONTHS.filter((month) => months.includes(month.value + 1));
+
   return (
     <div className={styles.financialPageFiltersContainer}>
       <div className={styles.financialPageSelectContent}>
         <select
           className={`${styles.financialPageSelect} ${styles.financialPageSelectMonth}`}
           value={selectedMonth}
+          disabled={disabled}
           onChange={(e) => onMonthChange(Number(e.target.value))}
         >
-          {FINANCIAL_MONTHS.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
+          {monthOptions.map((month) => (
+            <option key={month.value} value={month.value}>
+              {month.label}
             </option>
           ))}
         </select>
@@ -33,11 +42,12 @@ export function CashFlowFilters({
         <select
           className={`${styles.financialPageSelect} ${styles.financialPageSelectYear}`}
           value={selectedYear}
+          disabled={disabled}
           onChange={(e) => onYearChange(Number(e.target.value))}
         >
-          {CASH_FLOW_YEARS.map((y) => (
-            <option key={y} value={y}>
-              {y}
+          {years.map((year) => (
+            <option key={year} value={year}>
+              {year}
             </option>
           ))}
         </select>

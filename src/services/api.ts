@@ -1,5 +1,6 @@
 import { ApiError, fetchJson, fetchRaw } from '@/lib/apiClient';
 import type {
+  CashFlowPeriodosResponse,
   CashFlowResponse,
   FinancialSection,
   InadimplenciaFechamentosResponse,
@@ -119,11 +120,12 @@ export async function upsertManagerCommission(data: {
 
 export async function getInnovationFund(
   mes: number,
-  ano: number
+  ano: number,
+  section: FinancialSection = 2
 ): Promise<InnovationFund | null> {
   try {
     return await fetchJson<InnovationFund>(
-      `/api/properfy/innovation-fund?mes=${mes}&ano=${ano}`
+      `/api/properfy/innovation-fund?mes=${mes}&ano=${ano}&section=${section}`
     );
   } catch (err) {
     if (err instanceof ApiError && (err.status === 404 || err.status === 400)) {
@@ -138,6 +140,7 @@ export async function upsertInnovationFund(data: {
   ano: number;
   fundo_inovacao: number;
   observacao?: string;
+  section?: FinancialSection;
 }): Promise<Response> {
   return fetchRaw('/api/properfy/innovation-fund', {
     method: 'POST',
@@ -280,6 +283,10 @@ export async function getCashFlow(
   return fetchJson<CashFlowResponse>(
     `/api/properfy/cash-flow?mes=${mes}&ano=${ano}`
   );
+}
+
+export async function getCashFlowPeriodos(): Promise<CashFlowPeriodosResponse> {
+  return fetchJson<CashFlowPeriodosResponse>('/api/properfy/cash-flow/periodos');
 }
 
 export async function login(

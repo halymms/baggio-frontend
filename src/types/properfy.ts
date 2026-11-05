@@ -77,9 +77,7 @@ export interface CashFlowPeriodo {
 }
 
 export interface CashFlowCards {
-  totalGeral: number;
-  totalEntradas: number;
-  totalSaidas: number;
+  saldo: number;
 }
 
 export interface CashFlowGraficoDia {
@@ -88,10 +86,26 @@ export interface CashFlowGraficoDia {
   valor: number;
 }
 
+export interface CashFlowDia {
+  dia: number;
+  data: string;
+  saldo: number;
+}
+
 export interface CashFlowBanco {
   fkWallet: number;
   nome: string;
-  totalGeral: number;
+  saldo: number;
+  dias: CashFlowDia[];
+}
+
+export interface CashFlowPeriodoDisponivel {
+  ano: number;
+  meses: number[];
+}
+
+export interface CashFlowPeriodosResponse {
+  periodos: CashFlowPeriodoDisponivel[];
 }
 
 export interface CashFlowResponse {

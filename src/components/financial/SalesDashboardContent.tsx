@@ -67,6 +67,14 @@ interface SalesDashboardContentProps {
   subtitle: string;
 }
 
+type SalesAnnualChartType = 'comissaoVendas' | 'comissaoVendaEfetuada' | 'sinalNegocio';
+
+const SALES_ANNUAL_SERIES: Record<SalesAnnualChartType, { index: string; name: string; color: string }> = {
+  comissaoVendas: { index: '1.1.2.1.2', name: 'Comissão de vendas', color: '#FFBB28' },
+  comissaoVendaEfetuada: { index: '1.2.2.4.4', name: 'Comissão venda efetuada', color: '#0088FE' },
+  sinalNegocio: { index: '2.1.1.2.2', name: 'Sinal do negócio', color: '#00C49F' },
+};
+
 export function SalesDashboardContent({
   section: selectedSection,
   title,
@@ -88,7 +96,7 @@ export function SalesDashboardContent({
     void despesasPessoalFromHook;
     void impostosFromHook;
     // Estado para gráfico anual
-    const [selectedAnnualType, setSelectedAnnualType] = useState<'bonificacao' | 'taxaAdministracao' | 'taxaIntermediacao'>('bonificacao');
+    const [selectedAnnualType, setSelectedAnnualType] = useState<SalesAnnualChartType>('comissaoVendas');
     const [annualChartData, setAnnualChartData] = useState<Array<{ month: string, value: number }>>([]);
     const [annualClosingData, setAnnualClosingData] = useState<SalesAnnualClosingRow[]>([]);
 
@@ -575,13 +583,10 @@ export function SalesDashboardContent({
             return realtimeReportData(body).then((res) => {
                 const original: ReportIndexItem[] = res.original ?? [];
                 const getAmount = (idx: string) => getAmountFromOriginal(original, idx);
-                let value = 0;
-                if (selectedAnnualType === 'taxaAdministracao') value = getAmount("1.1.1.1.11");
-                if (selectedAnnualType === 'taxaIntermediacao') value = getAmount("1.1.1.1.12");
-                if (selectedAnnualType === 'bonificacao') value = getAmount("2.1.1.1.9");
+                const series = SALES_ANNUAL_SERIES[selectedAnnualType];
                 return {
                     month: `${monthAbbr[m.value]}/${queryYear}`,
-                    value
+                    value: getAmount(series.index)
                 };
             }).catch(() => ({ month: `${monthAbbr[m.value]}/${queryYear}`, value: 0 }));
         });
@@ -637,16 +642,23 @@ export function SalesDashboardContent({
     // Fetch 5-Year Data for Stacked Area Chart
     useEffect(() => {
         const fetchAnnualStackedData = async () => {
-            const yearsToFetch = [currentYear - 4, currentYear - 3, currentYear - 2, currentYear - 1, currentYear];
+            const storyStartYear = 2023;
+            const storyStartMonth = 3;
+            const currentMonthIndex = new Date().getMonth();
+            const yearsToFetch: number[] = [];
+            for (let year = Math.max(storyStartYear, currentYear - 4); year <= currentYear; year += 1) {
+                yearsToFetch.push(year);
+            }
             const monthAbbr = [...MONTH_ABBR];
 
         let allMonthsData: AnnualStackedPoint[] = [];
 
             for (const year of yearsToFetch) {
-                const currentMonthIndex = new Date().getMonth();
-                const monthsToFetch = year === currentYear
-                    ? months.filter(m => m.value <= currentMonthIndex)
-                    : months;
+                const monthsToFetch = months.filter((m) => {
+                    if (year === storyStartYear && m.value < storyStartMonth) return false;
+                    if (year === currentYear && m.value >= currentMonthIndex) return false;
+                    return true;
+                });
 
                 const promises = monthsToFetch.map(async (m) => {
                     const startDate = new Date(year, m.value, 1);
@@ -833,18 +845,21 @@ export function SalesDashboardContent({
                         <select
                             id="annualTypeSelect"
                             value={selectedAnnualType}
-                            onChange={e => setSelectedAnnualType(e.target.value as 'bonificacao' | 'taxaAdministracao' | 'taxaIntermediacao')}
+                            onChange={e => setSelectedAnnualType(e.target.value as SalesAnnualChartType)}
                             style={{ padding: '4px 8px', borderRadius: 4 }}
                         >
-                            <option value="bonificacao">Bonificação</option>
-                            <option value="taxaAdministracao">Taxa de Administração</option>
-                            <option value="taxaIntermediacao">Taxa de Intermediação</option>
+                            <option value="comissaoVendas">Comissão de vendas</option>
+                            <option value="comissaoVendaEfetuada">Comissão venda efetuada</option>
+                            <option value="sinalNegocio">Sinal do negócio</option>
                         </select>
                     </div>
                     <AnnualAreaChart
                         dados={annualChartData}
                         formatBRL={formatBRL}
-                        selectedAnnualType={selectedAnnualType}
+                        series={{
+                            name: SALES_ANNUAL_SERIES[selectedAnnualType].name,
+                            color: SALES_ANNUAL_SERIES[selectedAnnualType].color,
+                        }}
                     />
                 </div>
             </div>

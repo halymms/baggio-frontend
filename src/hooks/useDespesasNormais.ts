@@ -23,14 +23,14 @@ export function useDespesasNormais(apiData: RealtimeReportResponse | null) {
     const copaCozinha = getAmountFromOriginal(original, '1.2.1.13');
     const comemoracoes = getAmountFromOriginal(original, '1.2.1.14');
     const viagens = getAmountFromOriginal(original, '1.2.1.16');
-    const locacaoMaquinasEquipamentos = getAmountFromOriginal(original, '1.2.9.2.3');
     const tarifasBancarias = getAmountFromOriginal(original, '1.2.3.1');
     const tarifaCartaoCredito = getAmountFromOriginal(original, '1.2.3.3');
     const impostosFederais = getAmountFromOriginal(original, '1.2.4.1');
     const impostosMunicipais = getAmountFromOriginal(original, '1.2.4.2');
     const prejuizoDecorrenteAdmImoveis = getAmountFromOriginal(original, '1.2.8.1');
-    const bens = getAmountFromOriginal(original, '1.2.9.2');
-    const direitos = getAmountFromOriginal(original, '1.2.9');
+    const doacoes = getAmountFromOriginal(original, '1.2.1.12');
+    const assinaturas = getAmountFromOriginal(original, '1.2.1.15');
+    const jurosPagos = getAmountFromOriginal(original, '1.2.3.2');
     return (
       despesasGerais +
       telefones +
@@ -46,14 +46,14 @@ export function useDespesasNormais(apiData: RealtimeReportResponse | null) {
       copaCozinha +
       comemoracoes +
       viagens +
-      locacaoMaquinasEquipamentos +
       tarifasBancarias +
       tarifaCartaoCredito +
       impostosFederais +
       impostosMunicipais +
       prejuizoDecorrenteAdmImoveis +
-      bens +
-      direitos
+      doacoes +
+      assinaturas +
+      jurosPagos
     );
   }, [apiData]);
 }

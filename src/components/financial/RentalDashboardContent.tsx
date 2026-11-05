@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import { realtimeReportData, getMonthlyClosing, getManagerCommission } from "@/services/api";
+import { realtimeReportData, getMonthlyClosing, getManagerCommission, getInnovationFund } from "@/services/api";
 import { FinancialDashboardFilters } from "@/components/financial/FinancialDashboardFilters";
 import { KpiCards } from "@/components/financial/KpiCards";
 import {
@@ -16,11 +16,10 @@ import {
   buildRealtimeReportBody,
   buildRealtimeReportBodyFromRange,
 } from "@/lib/financial/reportBody";
-import { useDespesasNormais } from "@/hooks/useDespesasNormais";
 import { useDespesasPessoal } from "@/hooks/useDespesasPessoal";
 import { useImpostos } from "@/hooks/useImpostos";
 import { useInvestimentos } from "@/hooks/useInvestimentos";
-import type { FinancialSection, ManagerCommission, RealtimeReportResponse, ReportIndexItem } from "@/types/properfy";
+import type { FinancialSection, InnovationFund, ManagerCommission, RealtimeReportResponse, ReportIndexItem } from "@/types/properfy";
 import { Tooltip, Legend, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { PieSummaryChart } from '@/components/financial/PieSummaryChart';
 import { AnnualAreaChart } from '@/components/financial/AnnualAreaChart';
@@ -46,7 +45,12 @@ import {
 } from '@heroicons/react/24/outline';
 import styles from '@/app/dashboard/financial/financial.module.scss';
 
-/** Lê comissão gestor do Fechamento; `{}` / vazio → null (exibe ---). */
+function savedFundoInovacao(data: InnovationFund | null | undefined): number | null {
+    if (!data || data.fundo_inovacao === null || data.fundo_inovacao === undefined) return null;
+    const n = Number(data.fundo_inovacao);
+    return Number.isNaN(n) ? null : n;
+}
+
 function parseComissaoGestorFromApi(data: ManagerCommission | null | undefined): number | null {
     if (!data || data.comissao_gestor === null || data.comissao_gestor === undefined) {
         return null;
@@ -90,7 +94,6 @@ export function RentalDashboardContent({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const despesasNormaisFromHook = useDespesasNormais(apiData);
     const despesasPessoalFromHook = useDespesasPessoal(apiData, selectedSection);
     const impostosFromHook = useImpostos(apiData);
     const investimentosFromHook = useInvestimentos(apiData);
@@ -147,6 +150,7 @@ export function RentalDashboardContent({
     const [totalDespesas, setTotalDespesas] = useState<number>(0);
     const [retirada, setRetirada] = useState<number>(0);
     const [fundoInovacao, setFundoInovacao] = useState<number>(0);
+    const [fundoInovacaoFetched, setFundoInovacaoFetched] = useState<number | null>(null);
 
     // States for monthly closing (Moved from reports)
     const [sinaisNegocio, setSinaisNegocio] = useState<string>("");
@@ -180,6 +184,10 @@ export function RentalDashboardContent({
         getManagerCommission(mesNum, anoNum, 1)
             .then(data => setComissaoGestorFetched(parseComissaoGestorFromApi(data)))
             .catch(() => setComissaoGestorFetched(null));
+
+        getInnovationFund(mesNum, anoNum, 1)
+            .then(data => setFundoInovacaoFetched(savedFundoInovacao(data)))
+            .catch(() => setFundoInovacaoFetched(null));
     }, [queryMonth, queryYear]);
 
     useEffect(() => {
@@ -254,7 +262,7 @@ export function RentalDashboardContent({
                     + prejuizoDecorrenteAdmImoveis
                 );
 
-                setDespesasNormais(despesasNormaisFromHook || despesasNormaisCalc);
+                setDespesasNormais(despesasNormaisCalc);
                 setReceitaBruta(Number(receita?.amount ?? 0));
 
                 const impostosTotal = impostosFromHook || impostosFederais + impostosMunicipais;
@@ -281,17 +289,9 @@ export function RentalDashboardContent({
                     setReceitaLiquida(receitaLiquidaCalc);
                 }
 
-                let fundoDeReservaCalc = 0;
-                if (receitaLiquidaCalc) {
-                    fundoDeReservaCalc = receitaLiquidaCalc * 0.05;
-                    setFundoDeReserva(fundoDeReservaCalc);
-                }
-
-                let fundoInovacaoCalc = 0;
-                if (receitaLiquidaCalc) {
-                    fundoInovacaoCalc = receitaLiquidaCalc * 0.05; // Fixed for Locação
-                    setFundoInovacao(fundoInovacaoCalc);
-                }
+                const fundoInovacaoCalc = fundoInovacaoFetched ?? 0;
+                setFundoInovacao(fundoInovacaoCalc);
+                setFundoDeReserva(fundoInovacaoFetched);
 
                 let resultadoLiquidoCalc = 0;
                 if (receitaLiquidaCalc) {
@@ -329,11 +329,11 @@ export function RentalDashboardContent({
         queryMonth,
         queryYear,
         selectedSection,
-        despesasNormaisFromHook,
         despesasPessoalFromHook,
         impostosFromHook,
         investimentosFromHook,
         comissoesReceber,
+        fundoInovacaoFetched,
     ]);
 
     // Aplica comissão do Fechamento (reports, section=1) nos KPIs de locação
@@ -406,10 +406,11 @@ export function RentalDashboardContent({
             for (const m of months) {
                 const body = buildRealtimeReportBody(selectedSection, queryYear, m.value);
                 try {
-                    const [res, closingData, managerData] = await Promise.all([
+                    const [res, closingData, managerData, innovationData] = await Promise.all([
                         realtimeReportData(body),
                         getMonthlyClosing(m.value, queryYear),
-                        getManagerCommission(m.value, queryYear, 1).catch(() => null)
+                        getManagerCommission(m.value, queryYear, 1).catch(() => null),
+                        getInnovationFund(m.value, queryYear, 1).catch(() => null)
                     ]);
                     const receita = res.receitas?.find((r) => r.index === "1.1");
                     const despesa = res.despesas?.find((d) => d.index === "1.2");
@@ -451,6 +452,32 @@ export function RentalDashboardContent({
                     const despesasNormais =
                         despesasGerais + telefones + entidadesDeClasses + materiais + propagandaPublicidadeInstitucional + propagandaPublicidadeProduto + despesasComVeiculos + seguros + assessorias + servicos + manutencoes + copaCozinha + comemoracoes + viagens + tarifasBancarias + tarifaCartaoCredito + impostosFederais + impostosMunicipais + prejuizoDecorrenteAdmImoveis + doacoes + assinaturas + jurosPagos;
 
+                    console.log(
+                        `despesasNormais — ${m.label}/${queryYear}\n` +
+                        `despesasGerais: ${despesasGerais}\n` +
+                        `telefones: ${telefones}\n` +
+                        `entidadesDeClasses: ${entidadesDeClasses}\n` +
+                        `materiais: ${materiais}\n` +
+                        `propagandaPublicidadeInstitucional: ${propagandaPublicidadeInstitucional}\n` +
+                        `propagandaPublicidadeProduto: ${propagandaPublicidadeProduto}\n` +
+                        `despesasComVeiculos: ${despesasComVeiculos}\n` +
+                        `seguros: ${seguros}\n` +
+                        `assessorias: ${assessorias}\n` +
+                        `servicos: ${servicos}\n` +
+                        `manutencoes: ${manutencoes}\n` +
+                        `copaCozinha: ${copaCozinha}\n` +
+                        `comemoracoes: ${comemoracoes}\n` +
+                        `viagens: ${viagens}\n` +
+                        `tarifasBancarias: ${tarifasBancarias}\n` +
+                        `tarifaCartaoCredito: ${tarifaCartaoCredito}\n` +
+                        `impostosFederais: ${impostosFederais}\n` +
+                        `impostosMunicipais: ${impostosMunicipais}\n` +
+                        `prejuizoDecorrenteAdmImoveis: ${prejuizoDecorrenteAdmImoveis}\n` +
+                        `doacoes: ${doacoes}\n` +
+                        `assinaturas: ${assinaturas}\n` +
+                        `jurosPagos: ${jurosPagos}\n` +
+                        `despesasNormais: ${despesasNormais}`
+                    );
                     const comissoesReceber = closingData?.comissoes_receber ? Number(closingData.comissoes_receber) : 0;
 
                     const receitaBruta =
@@ -469,15 +496,9 @@ export function RentalDashboardContent({
                         receitaLiquida = Math.abs(Number(receitaBruta ?? 0)) - Math.abs(totalDespesasPessoalExtras) - Math.abs(despesasNormais);
                     }
 
-                    let fundoInovacao = 0;
-                    if (receitaLiquida) {
-                        fundoInovacao = receitaLiquida * 0.05;
-                    }
-
-                    let fundoDeReserva = 0;
-                    if (receitaLiquida) {
-                        fundoDeReserva = receitaLiquida * 0.05;
-                    }
+                    const fundoSalvo = savedFundoInovacao(innovationData);
+                    const fundoInovacao = fundoSalvo ?? 0;
+                    const fundoDeReserva = fundoSalvo;
 
                     let resultadoLiquido = 0;
                     if (receitaLiquida) {
@@ -641,16 +662,23 @@ export function RentalDashboardContent({
     // Fetch 5-Year Data for Stacked Area Chart
     useEffect(() => {
         const fetchAnnualStackedData = async () => {
-            const yearsToFetch = [currentYear - 4, currentYear - 3, currentYear - 2, currentYear - 1, currentYear];
+            const storyStartYear = 2023;
+            const storyStartMonth = 3;
+            const currentMonthIndex = new Date().getMonth();
+            const yearsToFetch: number[] = [];
+            for (let year = Math.max(storyStartYear, currentYear - 4); year <= currentYear; year += 1) {
+                yearsToFetch.push(year);
+            }
             const monthAbbr = [...MONTH_ABBR];
 
         let allMonthsData: AnnualStackedPoint[] = [];
 
             for (const year of yearsToFetch) {
-                const currentMonthIndex = new Date().getMonth();
-                const monthsToFetch = year === currentYear
-                    ? months.filter(m => m.value <= currentMonthIndex)
-                    : months;
+                const monthsToFetch = months.filter((m) => {
+                    if (year === storyStartYear && m.value < storyStartMonth) return false;
+                    if (year === currentYear && m.value >= currentMonthIndex) return false;
+                    return true;
+                });
 
                 const promises = monthsToFetch.map(async (m) => {
                     const startDate = new Date(year, m.value, 1);
@@ -716,10 +744,9 @@ export function RentalDashboardContent({
                             receitaLiquida = Math.abs(Number(receitaBruta ?? 0)) - Math.abs(totalDespesasPessoalExtras) - Math.abs(despesasNormais);
                         }
 
-                        let fundoInovacao = 0;
-                        if (receitaLiquida) {
-                            fundoInovacao = receitaLiquida * 0.05;
-                        }
+                        const fundoInovacao = savedFundoInovacao(
+                            await getInnovationFund(m.value, year, 1).catch(() => null)
+                        ) ?? 0;
 
                         let resultadoLiquido = 0;
                         if (receitaLiquida) {
@@ -941,8 +968,8 @@ export function RentalDashboardContent({
                             FUNDO DE INOVAÇÃO
                         </span>
                         <br />
-                        {receitaLiquida !== null
-                            ? formatBRL(receitaLiquida * 0.05)
+                        {fundoInovacaoFetched !== null
+                            ? formatBRL(fundoInovacaoFetched)
                             : '---'}
                     </p>
                     <div className={styles.despesasNormaisInfoIcon}>
@@ -950,6 +977,7 @@ export function RentalDashboardContent({
                     </div>
                 </div>
             </div>
+
             <div className={styles.financialPageHeader}>
                 <h2
                     className={styles.financialPageTitle}

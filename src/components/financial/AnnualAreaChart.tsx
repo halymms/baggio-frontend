@@ -15,8 +15,9 @@ const DEFAULT_TYPE_LABELS: Record<AnnualChartType, { name: string; color: string
 export type AnnualAreaChartProps = {
   dados: AnnualAreaDatum[];
   formatBRL: (value: number) => string;
-  selectedAnnualType: AnnualChartType;
+  selectedAnnualType?: AnnualChartType;
   labels?: Partial<Record<AnnualChartType, { name: string; color: string }>>;
+  series?: { name: string; color: string };
 };
 
 export function AnnualAreaChart({
@@ -24,8 +25,11 @@ export function AnnualAreaChart({
   formatBRL,
   selectedAnnualType,
   labels,
+  series,
 }: AnnualAreaChartProps) {
-  const typeConfig = { ...DEFAULT_TYPE_LABELS, ...labels }[selectedAnnualType];
+  const typeConfig = series
+    ?? (selectedAnnualType ? { ...DEFAULT_TYPE_LABELS, ...labels }[selectedAnnualType] : undefined);
+  if (!typeConfig) return null;
 
   return (
     <ResponsiveContainer width="100%" height={300}>

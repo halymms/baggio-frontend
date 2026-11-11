@@ -68,7 +68,7 @@ function exportRentalToExcel(data: RentalAnnualClosingRow[]) {
     'Despesas Normais': row.despesasNormais ?? '',
     'Receita Liquida': row.receitaLiquida ?? '',
     'Fundo de Inovação 5%': row.fundoDeReserva ?? '',
-    'Fundo de Reserva 5%': row.fundoDeReserva ?? '',
+    'Fundo de Reserva 5%': row.receitaLiquida != null ? Math.abs(row.receitaLiquida) * 0.05 : '',
     'Resultado Líquido': row.resultadoLiquido ?? '',
     'Folha de Pagamento': row.calculoFolhaPagamento ?? '',
     Investimentos: row.investimentos ?? '',
@@ -162,7 +162,7 @@ function RentalRowCells({
       <td>{formatCell(row.despesasNormais, formatBRL)}</td>
       <td>{formatCell(row.receitaLiquida, formatBRL)}</td>
       <td>{formatCell(row.fundoDeReserva, formatBRL)}</td>
-      <td>{formatBRL(0)}</td>
+      <td>{formatCell(row.receitaLiquida != null ? Math.abs(row.receitaLiquida) * 0.05 : null, formatBRL)}</td>
       <td>{formatCell(row.resultadoLiquido, formatBRL)}</td>
       <td>{formatCell(row.calculoFolhaPagamento, formatBRL)}</td>
       <td>{formatCell(row.investimentos, formatBRL)}</td>
@@ -194,7 +194,7 @@ function SalesRowCells({
       <td>{formatCell(row.despesasNormais, formatBRL)}</td>
       <td>{formatCell(row.receitaLiquida, formatBRL)}</td>
       <td>{formatCell(row.fundoInovacaoFetched, formatBRL)}</td>
-      <td>{formatBRL(0)}</td>
+      <td>{formatCell(row.fundoDeReserva, formatBRL)}</td>
       <td>{formatCell(row.resultadoLiquido, formatBRL)}</td>
       <td>{formatCell(row.folhaPagamento, formatBRL)}</td>
       <td>{formatCell(row.investimentos, formatBRL)}</td>

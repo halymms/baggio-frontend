@@ -210,7 +210,6 @@ function ReportsContent() {
         comissao_gestor: parseCurrency(comissaoGestor),
         observacao: observacaoGestor
       };
-      console.log('Salvando comissão de gestores:', dataManagerCommission);
       const res = await upsertManagerCommission(dataManagerCommission);
       if (res.ok) {
         alert('Comissão de gestores salva com sucesso!');

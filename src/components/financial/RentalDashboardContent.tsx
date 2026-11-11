@@ -51,6 +51,25 @@ function savedFundoInovacao(data: InnovationFund | null | undefined): number | n
     return Number.isNaN(n) ? null : n;
 }
 
+function fundoReservaLocacao(receitaLiquida: number) {
+    return Math.abs(receitaLiquida) * 0.05;
+}
+
+function somaTotalDespesasLocacao(
+    despesasComPessoal: number,
+    despesasNormais: number,
+    fundoInovacao: number,
+    fundoReserva: number,
+    folhaPagamento: number,
+    investimentos: number,
+) {
+    return Math.abs(despesasComPessoal)
+        + Math.abs(despesasNormais)
+        + Math.abs(fundoInovacao)
+        + Math.abs(folhaPagamento)
+        + Math.abs(investimentos);
+}
+
 function parseComissaoGestorFromApi(data: ManagerCommission | null | undefined): number | null {
     if (!data || data.comissao_gestor === null || data.comissao_gestor === undefined) {
         return null;
@@ -272,7 +291,6 @@ export function RentalDashboardContent({
                 const despesasPessoalCalc = calcDespesasPessoal(original, selectedSection);
                 const totalDespesasPessoalExtrasCalc = despesasPessoalCalc.totalDespesasPessoalExtras;
                 const totalDespesasPessoalCalc = despesasPessoalCalc.totalDespesasPessoal;
-                console.log('totalDespesasPessoal', totalDespesasPessoal);
                 const comissaoFolhaCalc = despesasPessoalCalc.comissaoFolha;
                 const calculoFolhaPagamentoCalc = despesasPessoalCalc.folhaPagamentoFinal;
 
@@ -291,7 +309,7 @@ export function RentalDashboardContent({
 
                 const fundoInovacaoCalc = fundoInovacaoFetched ?? 0;
                 setFundoInovacao(fundoInovacaoCalc);
-                setFundoDeReserva(fundoInovacaoFetched);
+                setFundoDeReserva(fundoReservaLocacao(receitaLiquidaCalc));
 
                 let resultadoLiquidoCalc = 0;
                 if (receitaLiquidaCalc) {
@@ -305,7 +323,6 @@ export function RentalDashboardContent({
                 let lucroLiquidoCalc = 0;
                 if (resultadoLiquidoCalc || calculoFolhaPagamentoCalc || investimentosVals) {
                     lucroLiquidoCalc = Math.abs(resultadoLiquidoCalc ?? 0) - Math.abs(calculoFolhaPagamentoCalc ?? 0) - Math.abs(investimentosVals ?? 0);
-                    console.log("Resultado Liquido", resultadoLiquidoCalc, "Calculo Folha Pagamento", folhaDePagamento, "Investimentos", investimentosVals);
                     setLucroLiquido(lucroLiquidoCalc);
                 }
 
@@ -340,31 +357,31 @@ export function RentalDashboardContent({
     useEffect(() => {
         setComissaoGestor(comissaoGestorFetched);
 
-        const salarios = despesasPessoalFromHook.salarios;
         const extras = totalDespesasPessoalExtras ?? 0;
-        const comissaoFolhaVal = comissaoFolha ?? 0;
         const despesasNormaisVal = despesasNormais ?? 0;
         const fundoVal = fundoInovacao ?? 0;
         const investVal = investimentos ?? 0;
         const comissaoAbs = Math.abs(comissaoGestorFetched ?? 0);
 
+        const fundoReservaVal = fundoReservaLocacao(receitaLiquida ?? 0);
         const hasDespesasBase =
             totalDespesasPessoalExtras != null ||
             despesasNormais != null ||
-            comissaoFolha != null ||
+            calculoFolhaPagamento != null ||
             investimentos != null ||
-            comissaoGestorFetched != null ||
-            fundoInovacao !== 0;
+            fundoInovacao !== 0 ||
+            fundoReservaVal !== 0;
 
         if (hasDespesasBase) {
             setTotalDespesas(
-                Math.abs(extras) +
-                Math.abs(salarios) +
-                Math.abs(comissaoFolhaVal) +
-                Math.abs(despesasNormaisVal) +
-                Math.abs(fundoVal) +
-                Math.abs(investVal) +
-                comissaoAbs
+                somaTotalDespesasLocacao(
+                    extras,
+                    despesasNormaisVal,
+                    fundoVal,
+                    fundoReservaVal,
+                    calculoFolhaPagamento ?? 0,
+                    investVal,
+                )
             );
         }
 
@@ -389,14 +406,13 @@ export function RentalDashboardContent({
     }, [
         comissaoGestorFetched,
         totalDespesasPessoalExtras,
-        comissaoFolha,
         despesasNormais,
         fundoInovacao,
         investimentos,
         resultadoLiquido,
         calculoFolhaPagamento,
         receitaBruta,
-        despesasPessoalFromHook.salarios,
+        receitaLiquida,
     ]);
 
     useEffect(() => {
@@ -452,32 +468,6 @@ export function RentalDashboardContent({
                     const despesasNormais =
                         despesasGerais + telefones + entidadesDeClasses + materiais + propagandaPublicidadeInstitucional + propagandaPublicidadeProduto + despesasComVeiculos + seguros + assessorias + servicos + manutencoes + copaCozinha + comemoracoes + viagens + tarifasBancarias + tarifaCartaoCredito + impostosFederais + impostosMunicipais + prejuizoDecorrenteAdmImoveis + doacoes + assinaturas + jurosPagos;
 
-                    console.log(
-                        `despesasNormais — ${m.label}/${queryYear}\n` +
-                        `despesasGerais: ${despesasGerais}\n` +
-                        `telefones: ${telefones}\n` +
-                        `entidadesDeClasses: ${entidadesDeClasses}\n` +
-                        `materiais: ${materiais}\n` +
-                        `propagandaPublicidadeInstitucional: ${propagandaPublicidadeInstitucional}\n` +
-                        `propagandaPublicidadeProduto: ${propagandaPublicidadeProduto}\n` +
-                        `despesasComVeiculos: ${despesasComVeiculos}\n` +
-                        `seguros: ${seguros}\n` +
-                        `assessorias: ${assessorias}\n` +
-                        `servicos: ${servicos}\n` +
-                        `manutencoes: ${manutencoes}\n` +
-                        `copaCozinha: ${copaCozinha}\n` +
-                        `comemoracoes: ${comemoracoes}\n` +
-                        `viagens: ${viagens}\n` +
-                        `tarifasBancarias: ${tarifasBancarias}\n` +
-                        `tarifaCartaoCredito: ${tarifaCartaoCredito}\n` +
-                        `impostosFederais: ${impostosFederais}\n` +
-                        `impostosMunicipais: ${impostosMunicipais}\n` +
-                        `prejuizoDecorrenteAdmImoveis: ${prejuizoDecorrenteAdmImoveis}\n` +
-                        `doacoes: ${doacoes}\n` +
-                        `assinaturas: ${assinaturas}\n` +
-                        `jurosPagos: ${jurosPagos}\n` +
-                        `despesasNormais: ${despesasNormais}`
-                    );
                     const comissoesReceber = closingData?.comissoes_receber ? Number(closingData.comissoes_receber) : 0;
 
                     const receitaBruta =
@@ -518,9 +508,17 @@ export function RentalDashboardContent({
                         retirada = (resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentos ?? 0) - comissaoAbs;
                     }
 
+                    const fundoReserva = fundoReservaLocacao(receitaLiquida);
                     let calculoTotalDespesas = 0;
-                    if (totalDespesasPessoalExtras || despesasNormais || comissaoGestor != null || fundoInovacao || comissaoFolha || investimentos || salarios) {
-                        calculoTotalDespesas = Math.abs(totalDespesasPessoalExtras ?? 0) + Math.abs(salarios ?? 0) + Math.abs(comissaoFolha ?? 0) + Math.abs(despesasNormais ?? 0) + Math.abs(fundoInovacao ?? 0) + Math.abs(investimentos ?? 0) + comissaoAbs;
+                    if (totalDespesasPessoalExtras || despesasNormais || fundoInovacao || fundoReserva || calculoFolhaPagamento || investimentos) {
+                        calculoTotalDespesas = somaTotalDespesasLocacao(
+                            totalDespesasPessoalExtras,
+                            despesasNormais,
+                            fundoInovacao,
+                            fundoReserva,
+                            calculoFolhaPagamento,
+                            investimentos,
+                        );
                     }
 
                     results.push({
@@ -765,9 +763,17 @@ export function RentalDashboardContent({
 
                         const closingData = await getMonthlyClosing(m.value, year).catch(() => null);
 
+                        const fundoReserva = fundoReservaLocacao(receitaLiquida);
                         let calculoTotalDespesas = 0;
-                        if (totalDespesasPessoalExtras || despesasNormais || comissaoGestor != null || fundoInovacao || comissaoFolha || investimentos || salarios) {
-                            calculoTotalDespesas = Math.abs(totalDespesasPessoalExtras ?? 0) + Math.abs(salarios ?? 0) + Math.abs(comissaoFolha ?? 0) + Math.abs(despesasNormais ?? 0) + Math.abs(fundoInovacao ?? 0) + Math.abs(investimentos ?? 0) + comissaoAbs;
+                        if (totalDespesasPessoalExtras || despesasNormais || fundoInovacao || fundoReserva || calculoFolhaPagamento || investimentos) {
+                            calculoTotalDespesas = somaTotalDespesasLocacao(
+                                totalDespesasPessoalExtras,
+                                despesasNormais,
+                                fundoInovacao,
+                                fundoReserva,
+                                calculoFolhaPagamento,
+                                investimentos,
+                            );
                         }
 
                         let retirada = 0;

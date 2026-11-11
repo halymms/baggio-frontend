@@ -247,7 +247,6 @@ export function SalesDashboardContent({
                 const comissaoVendaEfetuada = getAmount("1.2.2.4.4");
                 // const assinaturas = getAmount("1.2.1.15");
                 const jurosPagos = getAmount("1.2.3.2");
-                const prejuizoVendas = getAmount("1.2.8.1.2");
                 const taxas = getAmount("1.2.4.3");
 
                 const despesasNormaisCalc = (
@@ -274,7 +273,6 @@ export function SalesDashboardContent({
                     + prejuizos // 1.2.8
                     + bens // 1.2.9.2
                     + taxas // 1.2.4.3
-                    + prejuizoVendas
                 );
 
                 setDespesasNormais(despesasNormaisCalc);
@@ -287,7 +285,6 @@ export function SalesDashboardContent({
                 const totalDespesasPessoalExtrasCalc = primeiroCalcDespesaPessoalExtra - Math.abs(proLabore) - Math.abs(salarios);
                 setTotalDespesasPessoalExtras(totalDespesasPessoalExtrasCalc);
 
-                console.log("folha e pessoal- folhaPagamento:", folhaPagamento, "outrasDespesasPessoal:", outrasDespesasPessoal, "comissaoDecorrenteVendaImoveis:", comissaoDecorrenteVendaImoveis, "gratificacoesPremiacoes:", gratificacoesPremiacoes, "proLabore:", proLabore, "comissaoVendaEfetuada:", comissaoVendaEfetuada)
                 const totalDespesasPessoalCalc = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(comissaoDecorrenteVendaImoveis) + Math.abs(comissaoLocacaoImoveis) + Math.abs(gratificacoesPremiacoes) - Math.abs(proLabore) - Math.abs(comissaoVendaEfetuada);
                 setTotalDespesasPessoal(totalDespesasPessoalCalc);
 
@@ -302,7 +299,6 @@ export function SalesDashboardContent({
                 let receitaLiquidaCalc = 0;
                 if (totalDespesasPessoalExtrasCalc && despesasNormaisCalc) {
                     receitaLiquidaCalc = Math.abs(Number(receita?.amount ?? 0)) - Math.abs(despesasNormaisCalc) - Math.abs(totalDespesasPessoalCalc);
-                    console.log("receita bruta: ", receita?.amount, "despesas normais: ", Math.abs(despesasNormaisCalc), "total despesas pessoal: ", totalDespesasPessoalCalc);
                     setReceitaLiquida(receitaLiquidaCalc);
                 }
 
@@ -315,7 +311,6 @@ export function SalesDashboardContent({
                 let resultadoLiquidoCalc = 0;
                 if (receitaLiquidaCalc && corretores && fundoInovacaoFetched) {
                     resultadoLiquidoCalc = Math.abs(receitaLiquidaCalc) - Math.abs(corretores) - Number(fundoInovacaoFetched);
-                    console.log("receita liquida: ", receitaLiquidaCalc, "corretores: ", corretores, "fundo inovacao: ", fundoInovacaoFetched);
                     setResultadoLiquido(resultadoLiquidoCalc);
                 }
 
@@ -332,7 +327,6 @@ export function SalesDashboardContent({
 
                 let resultadoFixo = 0;
                 if (despesasNormais || impostos || totalDespesasPessoal) {
-                    console.log("calculo fixo: ", despesasNormais, impostos, totalDespesasPessoal);
                     resultadoFixo = Math.abs(despesasNormaisCalc ?? 0) - Math.abs(impostosData ?? 0) + Math.abs(totalDespesasPessoalCalc ?? 0);
                     setVendaValorFixo(resultadoFixo);
                 }
@@ -349,7 +343,6 @@ export function SalesDashboardContent({
                 }
 
                 if (impostos || fundoInovacaoFetched || currentComissaoGestor || comissaoVendaEfetuada) {
-                    console.log("impostos", impostos, "comissaoGestor", currentComissaoGestor, "comissaoVendaEfetuada", comissaoVendaEfetuada);
                     const resultadoVariavel = Math.abs(impostos) + Math.abs(comissaoVendaEfetuada) + Math.abs(currentComissaoGestor ?? 0);
                     setVendaVariavel(resultadoVariavel);
                 }
@@ -360,7 +353,6 @@ export function SalesDashboardContent({
 
                 if (resultadoLiquido || calculoFolhaPagamento || investimentosVals || currentComissaoGestor) {
                     const retiradaCalc = (resultadoLiquido ?? 0) - Math.abs(currentComissaoGestor ?? 0);
-                    console.log("resultado liquido: ", resultadoLiquido, "comissao gestor: ", currentComissaoGestor);
                     setRetirada(retiradaCalc);
                 }
                 if (receitaBruta && retirada) {
@@ -369,7 +361,6 @@ export function SalesDashboardContent({
                 }
                 if (despesa || totalDespesasPessoal) {
                     const totalDespesaCalc = Math.abs(totalDespesasPessoalCalc ?? 0) + Math.abs(corretores ?? 0) + Math.abs(despesasNormais ?? 0) + Number(fundoInovacaoFetched) + Math.abs(comissaoGestor ?? 0);
-                    console.log("total despesas pessoal: ", Math.abs(totalDespesasPessoalCalc ?? 0), "corretores: ", Math.abs(corretores ?? 0), "despesas normais: ", Math.abs(despesasNormais ?? 0), "fundo de inovação: ", Number(fundoInovacaoFetched), "comissão gestor: ", Math.abs(comissaoGestor ?? 0));
                     setTotalDespesas(-Math.abs(totalDespesaCalc));
                 }
                 if (comissaoVendaEfetuada) {
@@ -385,12 +376,10 @@ export function SalesDashboardContent({
                 }
                 let resultadoMC = 0;
                 if (margemContribuicaoCalculo && receitaBruta) {
-                    console.log("margemContribuicao", margemContribuicaoCalculo, "receitaBruta", receitaBruta);
                     resultadoMC = margemContribuicaoCalculo / Math.abs(receitaBruta);
                     setMargemContribuicaoPorcento(resultadoMC);
                 }
                 if (resultadoFixo && resultadoMC) {
-                    console.log("vendaValorFixo", resultadoFixo, "margemContribuicaoPorcento", resultadoMC);
                     const resultadoMV = resultadoFixo / resultadoMC;
                     setPontoEquilibrio(resultadoMV);
                 }
@@ -425,6 +414,7 @@ export function SalesDashboardContent({
                     const salarios = getAmount("1.2.2.1.14");
                     const gratificacoesPremiacoes = getAmount("1.2.2.5");
                     const comissaoLocacaoImoveis = getAmount("1.2.2.3");
+                    const despesasGerais = getAmount("1.2.1.1");
                     const telefones = getAmount("1.2.1.2");
                     const entidadesDeClasses = getAmount("1.2.1.3");
                     const materiais = getAmount("1.2.1.4");
@@ -435,34 +425,52 @@ export function SalesDashboardContent({
                     const assessorias = getAmount("1.2.1.9");
                     const servicos = getAmount("1.2.1.10");
                     const manutencoes = getAmount("1.2.1.11");
-                    const ajudaDeCusto = getAmount("1.2.2.6");
                     const copaCozinha = getAmount("1.2.1.13");
                     const comemoracoes = getAmount("1.2.1.14");
                     const viagens = getAmount("1.2.1.16");
                     const tarifasBancarias = getAmount("1.2.3.1");
                     const tarifaCartaoCredito = getAmount("1.2.3.3");
-                    const impostosFederais = getAmount("1.2.4.1");
-                    const impostosMunicipais = getAmount("1.2.4.2");
+                    const impostosData = getAmount("1.2.4");
                     const doacoes = getAmount("1.2.1.12");
                     const jurosPagos = getAmount("1.2.3.2");
                     const prejuizos = getAmount("1.2.8");
                     const bens = getAmount("1.2.9.2");
-                    const direitos = getAmount("1.2.9.3");
+                    const comissaoDecorrenteVendaImoveis = getAmount("1.2.2.4");
                     const investimentosVals = getAmount("1.2.9.4");
+                    const comissaoVendaEfetuada = getAmount("1.2.2.4.4");
                     const taxas = getAmount("1.2.4.3");
                     const despesasNormais =
-                        telefones + entidadesDeClasses + materiais + propagandaPublicidadeInstitucional + propagandaPublicidadeProduto + despesasComVeiculos + seguros + assessorias + servicos + manutencoes + doacoes + copaCozinha + comemoracoes + viagens + tarifasBancarias + jurosPagos + tarifaCartaoCredito + impostosFederais + impostosMunicipais + prejuizos + bens + direitos + investimentosVals + taxas;
+                        despesasGerais +
+                        telefones +
+                        entidadesDeClasses +
+                        materiais +
+                        propagandaPublicidadeInstitucional +
+                        propagandaPublicidadeProduto +
+                        despesasComVeiculos +
+                        seguros +
+                        assessorias +
+                        servicos +
+                        manutencoes +
+                        doacoes +
+                        copaCozinha +
+                        comemoracoes +
+                        viagens +
+                        tarifasBancarias +
+                        jurosPagos +
+                        tarifaCartaoCredito +
+                        impostosData +
+                        prejuizos +
+                        bens +
+                        taxas;
 
                     const receitaBruta =
                       receita?.amount != null ? Number(receita.amount) : null;
-                    const totalDespesas =
-                      despesa?.amount != null ? Number(despesa.amount) : null;
-                    const impostos = getAmount("1.2.4");
+                    const impostos = impostosData;
 
                     const primeiroCalcDespesaPessoalExtra = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal);
                     const totalDespesasPessoalExtras = primeiroCalcDespesaPessoalExtra - Math.abs(proLabore) - Math.abs(salarios);
 
-                    const totalDespesasPessoal = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(gratificacoesPremiacoes) + Math.abs(comissaoLocacaoImoveis) + Math.abs(ajudaDeCusto) - Math.abs(proLabore);
+                    const totalDespesasPessoal = Math.abs(folhaPagamento) + Math.abs(outrasDespesasPessoal) + Math.abs(comissaoDecorrenteVendaImoveis) + Math.abs(comissaoLocacaoImoveis) + Math.abs(gratificacoesPremiacoes) - Math.abs(proLabore) - Math.abs(comissaoVendaEfetuada);
 
                     let comissaoFolha = 0;
                     if (totalDespesasPessoal) {
@@ -471,7 +479,7 @@ export function SalesDashboardContent({
 
                     let receitaLiquida = 0;
                     if (totalDespesasPessoalExtras && despesasNormais) {
-                        receitaLiquida = Math.abs(Number(receitaBruta ?? 0)) - Math.abs(despesasNormais);
+                        receitaLiquida = Math.abs(Number(receitaBruta ?? 0)) - Math.abs(despesasNormais) - Math.abs(totalDespesasPessoal);
                     }
 
                     let fundoDeReserva = 0;
@@ -485,8 +493,8 @@ export function SalesDashboardContent({
                     }
 
                     let resultadoLiquido = 0;
-                    if (receitaLiquida) {
-                        resultadoLiquido = Number(receitaLiquida) - Number(localFundoInovacao);
+                    if (receitaLiquida && comissaoVendaEfetuada && localFundoInovacao) {
+                        resultadoLiquido = Math.abs(receitaLiquida) - Math.abs(comissaoVendaEfetuada) - Number(localFundoInovacao);
                     }
 
                     let calculoFolhaPagamento = 0;
@@ -506,8 +514,18 @@ export function SalesDashboardContent({
 
                     let retirada = null;
                     if (resultadoLiquido || calculoFolhaPagamento || investimentosVals || comissaoGestor) {
-                        retirada = (resultadoLiquido ?? 0) - Math.abs(calculoFolhaPagamento ?? 0) - Math.abs(investimentosVals ?? 0) - Math.abs(comissaoGestor ?? 0);
+                        retirada = resultadoLiquido - Math.abs(comissaoGestor ?? 0);
                     }
+
+                    const totalDespesas = (despesa || totalDespesasPessoal)
+                        ? -Math.abs(
+                            Math.abs(totalDespesasPessoal) +
+                            Math.abs(comissaoVendaEfetuada) +
+                            Math.abs(despesasNormais) +
+                            Number(localFundoInovacao ?? 0) +
+                            Math.abs(comissaoGestor ?? 0)
+                        )
+                        : null;
                     results.push({
                         month: monthAbbr[m.value],
                         receitaBruta,
@@ -734,17 +752,10 @@ export function SalesDashboardContent({
                             receitaLiquida = Math.abs(Number(receitaBruta ?? 0)) - Math.abs(despesasNormais) - Math.abs(totalDespesasPessoal);
                         }
 
-                        // resultadoLiquido = receitaLiquida - corretores(comissaoVendaEfetuada) - fundoInovacao (igual ao topo, linha 366)
-                        let resultadoLiquido = 0;
-                        if (receitaLiquida && comissaoVendaEfetuada && localFundoInovacao) {
-                            resultadoLiquido = Math.abs(receitaLiquida) - Math.abs(comissaoVendaEfetuada) - Number(localFundoInovacao);
-                        }
+                        // resultadoLiquido = receita líquida - corretores - fundo de inovação (0 quando não há valor salvo)
+                        const resultadoLiquido = Math.abs(receitaLiquida) - Math.abs(comissaoVendaEfetuada) - Number(localFundoInovacao);
 
-                        // retirada = resultadoLiquido - comissaoGestor (igual ao topo, linha 411)
-                        let retirada = 0;
-                        if (resultadoLiquido || comissaoGestor) {
-                            retirada = resultadoLiquido - Math.abs(comissaoGestor);
-                        }
+                        const retirada = resultadoLiquido - Math.abs(comissaoGestor);
 
                         // totalDespesas = totalDespesasPessoal + corretores + despesasNormais + fundoInovacao + comissaoGestor (igual ao topo, linha 420)
                         const totalDespesasCalc = Math.abs(totalDespesasPessoal) + Math.abs(comissaoVendaEfetuada) + Math.abs(despesasNormais) + Number(localFundoInovacao) + Math.abs(comissaoGestor);
@@ -754,7 +765,7 @@ export function SalesDashboardContent({
                             fullDate: startDate,
                             receitaBruta: receitaBruta,
                             despesas: totalDespesasCalc,
-                            retirada: retirada > 0 ? retirada : 0
+                            retirada,
                         };
                     } catch (err) {
                         console.error(`Error fetching data for ${m.label}/${year}`, err);

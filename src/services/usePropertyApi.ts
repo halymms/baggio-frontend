@@ -51,30 +51,23 @@ export function usePropertyApi() {
         return res.json();
     };
 
-    const advertisedPropertyReport = async () => {
-        const pad = (n: number) => String(n).padStart(2, '0');
-        const now = new Date();
-
-        const startDate = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const start = `${startDate.getFullYear()}-${pad(startDate.getMonth() + 1)}-01`;
-        const end = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(lastDay)}`;
-
+    const advertisedPropertyReport = async (month: number, year: number) => {
         const res = await fetch(`${API_URL}/api/property/property/report/advertised`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dteNewListing: [start, end] }),
+            body: JSON.stringify({ month, year }),
         });
         return res.json() as Promise<{
-            lastMonths: { month: string; contractsAmount: number }[];
+            lastMonths: { month: string; contractsAmount: number; value: number }[];
             purposes: Record<string, { amount: number; value: number }>;
         }>;
     };
 
-    const activeContractCount = async (): Promise<number> => {
-        const res = await fetch(`${API_URL}/api/property/property/active/count`, {
+    const activeContractCount = async (month: number, year: number): Promise<number> => {
+        const res = await fetch(`${API_URL}/api/rental/contract/active/count`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ month, year }),
         });
         const data = await res.json();
         return typeof data.count === 'number' ? data.count : 0;
@@ -91,7 +84,6 @@ export function usePropertyApi() {
             contractType: Record<string, number>;
             guarantees: Record<string, number>;
             pcf: Record<string, number>;
-            readjustments: Record<string, number>;
             valuesByContractType: Record<string, number>;
             totalValue: number;
         }>;
@@ -104,7 +96,7 @@ export function usePropertyApi() {
             body: JSON.stringify({ month, year }),
         });
         return res.json() as Promise<{
-            lastMonths: { month: string; contractsAmount: number }[];
+            lastMonths: { month: string; contractsAmount: number; readjustments: number; readjustmentsValue: number }[];
         }>;
     };
 
@@ -115,7 +107,7 @@ export function usePropertyApi() {
             body: JSON.stringify({ month, year }),
         });
         return res.json() as Promise<{
-            lastMonths: { month: string; count: number }[];
+            lastMonths: { month: string; count: number; value: number }[];
         }>;
     };
 

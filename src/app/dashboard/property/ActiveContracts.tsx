@@ -1,19 +1,20 @@
 'use client';
 import { useEffect, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import type { PieLabelRenderProps, TooltipContentProps } from "recharts";
 import { BuildingOfficeIcon } from "@heroicons/react/24/outline";
 import styles from './property.module.scss';
 import { usePropertyApi } from "@/services/usePropertyApi";
 import { buildLookup, COLORS_GUARANTEE, COLORS_PCF, COLORS_TYPE, Filters, Options, sumValues } from "./_shared";
 
-const renderPieLabel = ({ x, y, cx, percent, value }: any) => (
-    <text x={x} y={y} fill="#666" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={12}>
-        {`${value} (${(percent * 100).toFixed(1)}%)`}
+const renderPieLabel = ({ x, y, cx, percent, value }: PieLabelRenderProps) => (
+    <text x={x} y={y} fill="#666" textAnchor={Number(x) > Number(cx) ? 'start' : 'end'} dominantBaseline="central" fontSize={12}>
+        {`${value} (${(Number(percent ?? 0) * 100).toFixed(1)}%)`}
     </text>
 );
 
 const makePieTooltip = (total: number) => {
-    function PieTooltip({ active, payload }: any) {
+    function PieTooltip({ active, payload }: Partial<TooltipContentProps<number, string>>) {
         if (!active || !payload?.length) return null;
         const { name, value } = payload[0];
         const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
@@ -44,7 +45,6 @@ type Summary = {
     contractType: Record<string, number>;
     guarantees: Record<string, number>;
     pcf: Record<string, number>;
-    readjustments: Record<string, number>;
     valuesByContractType: Record<string, number>;
     totalValue: number;
 };
@@ -52,7 +52,7 @@ type Summary = {
 const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 const brlCompact = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
 
-type Timeseries = { lastMonths: { month: string; contractsAmount: number }[] };
+type Timeseries = { lastMonths: { month: string; contractsAmount: number; readjustments: number; readjustmentsValue: number }[] };
 
 const now = new Date();
 
@@ -67,15 +67,13 @@ export function ActiveContracts({ options }: { options: Options }) {
     const { activeContractCount, activeContractSummary, activeContractTimeseries, terminatedContractCount } = usePropertyApi();
 
     useEffect(() => {
-        activeContractCount().then(setTotalActive);
-    }, []);
-
-    useEffect(() => {
         setSummary(null);
         setTerminatedCount(null);
         setTimeseries(null);
+        setTotalActive(null);
 
         let cancelled = false;
+        activeContractCount(month, year).then(c => { if (!cancelled) setTotalActive(c); });
         activeContractSummary(month, year).then(s => { if (!cancelled) setSummary(s); });
         terminatedContractCount(month, year).then(c => { if (!cancelled) setTerminatedCount(c); });
         return () => { cancelled = true; };
@@ -111,6 +109,8 @@ export function ActiveContracts({ options }: { options: Options }) {
 
     return (
         <div className={styles.chartsGrid}>
+            <Filters monthVal={month} yearVal={year} onMonth={setMonth} onYear={setYear} />
+
             <div className={styles.summaryCard}>
                 <p className={styles.summaryValue}>
                     <span className={styles.summaryLabel}>TOTAL DE CONTRATOS ATIVOS</span>
@@ -123,7 +123,6 @@ export function ActiveContracts({ options }: { options: Options }) {
                     <BuildingOfficeIcon width={32} height={32} color="#2563eb" />
                 </div>
             </div>
-            <Filters monthVal={month} yearVal={year} onMonth={setMonth} onYear={setYear} />
 
             {summary === null || terminatedCount === null ? (
                 <ChartSkeleton />
@@ -247,63 +246,78 @@ export function ActiveContracts({ options }: { options: Options }) {
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
-                    <div className={styles.chartCard}>
-                        <div className={styles.chartHeader}>
-                            <p className={styles.chartTitle}>Reajustes por Mês</p>
-                            <span className={styles.chartTotal}>{sumValues(summary.readjustments)}</span>
-                        </div>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={Object.entries(summary.readjustments)
-                                .map(([month, value]) => ({ month, value }))
-                                .sort((a, b) => a.month.localeCompare(b.month))}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Line
-                                    type="monotone"
-                                    dataKey="value"
-                                    name="Reajustes"
-                                    stroke="#ff6b35"
-                                    strokeWidth={2}
-                                    dot={{ fill: '#1e3a5f', r: 4 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
                 </>
             )}
 
-            <div ref={timeseriesRef}>
+            <div ref={timeseriesRef} className={styles.timeseriesSection}>
                 {timeseries === null ? (
                     <ChartSkeleton />
                 ) : (
-                    <div className={styles.chartCard}>
-                        <div className={styles.chartHeader}>
-                            <p className={styles.chartTitle}>Novos contratos por mês (últimos 6 meses)</p>
-                            <span className={styles.chartTotal}>
-                                {timeseries.lastMonths.reduce((sum, m) => sum + m.contractsAmount, 0)}
-                            </span>
+                    <>
+                        <div className={styles.chartCard}>
+                            <div className={styles.chartHeader}>
+                                <p className={styles.chartTitle}>Novos contratos por mês (últimos 6 meses)</p>
+                                <span className={styles.chartTotal}>
+                                    {timeseries.lastMonths.reduce((sum, m) => sum + m.contractsAmount, 0)}
+                                </span>
+                            </div>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={timeseries.lastMonths}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis allowDecimals={false} />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="contractsAmount"
+                                        name="Contratos"
+                                        stroke="#2563eb"
+                                        strokeWidth={2}
+                                        dot={{ fill: '#1e3a5f', r: 4 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </div>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={timeseries.lastMonths}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="month" />
-                                <YAxis allowDecimals={false} />
-                                <Tooltip />
-                                <Legend />
-                                <Line
-                                    type="monotone"
-                                    dataKey="contractsAmount"
-                                    name="Contratos"
-                                    stroke="#2563eb"
-                                    strokeWidth={2}
-                                    dot={{ fill: '#1e3a5f', r: 4 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
+                        <div className={styles.chartCard}>
+                            <div className={styles.chartHeader}>
+                                <p className={styles.chartTitle}>Reajustes por Mês (últimos 6 meses)</p>
+                                <span className={styles.chartTotal}>
+                                    {`${timeseries.lastMonths.reduce((sum, m) => sum + m.readjustments, 0)} · ${brl.format(timeseries.lastMonths.reduce((sum, m) => sum + (m.readjustmentsValue ?? 0), 0))}`}
+                                </span>
+                            </div>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={timeseries.lastMonths} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="month" />
+                                    <YAxis yAxisId="left" allowDecimals={false} />
+                                    <YAxis yAxisId="right" orientation="right" tickFormatter={(v: number) => brlCompact.format(v)} />
+                                    <Tooltip formatter={(value: number, name: string) =>
+                                        name === 'Valor' ? brl.format(value) : value
+                                    } />
+                                    <Legend />
+                                    <Line
+                                        yAxisId="left"
+                                        type="monotone"
+                                        dataKey="readjustments"
+                                        name="Quantidade"
+                                        stroke="#2563eb"
+                                        strokeWidth={2}
+                                        dot={{ fill: '#1e3a5f', r: 4 }}
+                                    />
+                                    <Line
+                                        yAxisId="right"
+                                        type="monotone"
+                                        dataKey="readjustmentsValue"
+                                        name="Valor"
+                                        stroke="#ff6b35"
+                                        strokeWidth={2}
+                                        dot={{ fill: '#1e3a5f', r: 4 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </>
                 )}
             </div>
         </div>
@@ -338,15 +352,15 @@ function CarteiraCard({ activeCount, terminatedCount }: { activeCount: number; t
                     <p style={{ margin: 0, fontSize: 13, color: '#ef4444' }}>{terminatedPct}%</p>
                 </div>
             </div>
-            <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
+            <ResponsiveContainer width="100%" height={300}>
+                <PieChart margin={{ top: 16, right: 16, bottom: 8, left: 16 }}>
                     <Pie
                         data={data}
                         dataKey="value"
                         nameKey="name"
                         cx="50%"
                         cy="50%"
-                        outerRadius={100}
+                        outerRadius={80}
                         label={renderPieLabel}
                     >
                         {data.map((_, index) => (

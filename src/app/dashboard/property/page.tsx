@@ -1,19 +1,39 @@
 'use client';
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import styles from './property.module.scss';
 import { usePropertyApi } from "@/services/usePropertyApi";
 import { Options } from "./_shared";
 import { ActiveContracts } from "./ActiveContracts";
 import { TerminatedContracts } from "./TerminatedContracts";
 import { RemovedProperties } from "./RemovedProperties";
-import { ListedProperties } from "./ListedProperties";
 import { AdvertisedProperties } from "./AdvertisedProperties";
 
-type Tab = 'ativos' | 'rescindidos' | 'baixados' | 'angariados' | 'divulgados';
+const TABS = [
+    { key: 'ACTIVE', label: 'Contratos Ativos', Component: ActiveContracts },
+    { key: 'TERMINATED', label: 'Contratos Rescindidos', Component: TerminatedContracts },
+    { key: 'REMOVED', label: 'Imóveis Baixados', Component: RemovedProperties },
+    { key: 'ADVERTISED', label: 'Imóveis Divulgados', Component: AdvertisedProperties },
+] as const;
 
-export default function Page() {
+type TabKey = typeof TABS[number]['key'];
+
+const DEFAULT_TAB: TabKey = 'ACTIVE';
+
+function isTabKey(value: string | undefined): value is TabKey {
+    return TABS.some(t => t.key === value);
+}
+
+function PropertyPageContent() {
     const [options, setOptions] = useState<Options>({});
-    const [activeTab, setActiveTab] = useState<Tab>('ativos');
+
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+
+    // A aba ativa vem da URL (?tab=...). Sem parâmetro ou com valor inválido, abre Contratos Ativos.
+    const param = searchParams.get('tab')?.toUpperCase();
+    const activeTab: TabKey = isTabKey(param) ? param : DEFAULT_TAB;
 
     const { rentalContractOptions } = usePropertyApi();
 
@@ -21,50 +41,39 @@ export default function Page() {
         rentalContractOptions().then(setOptions);
     }, []);
 
+    const selectTab = (key: TabKey) => {
+        router.replace(`${pathname}?tab=${key}`, { scroll: false });
+    };
+
+    const ActiveComponent = TABS.find(t => t.key === activeTab)!.Component;
+
     return (
         <div className={styles.propertyPageContainer}>
             <div className={styles.propertyPageHeader}>
                 <h1 className={styles.propertyPageTitle}>Imóveis</h1>
-                <p className={styles.propertyPageSubtitle}>Lorem ipsum dolor sit amet</p>
+                <p className={styles.propertyPageSubtitle}>Visão geral dos contratos de locação e da carteira de imóveis</p>
             </div>
             <div className={styles.tabsContainer}>
-                <button
-                    className={`${styles.tabButton} ${activeTab === 'ativos' ? styles.tabButtonActive : ''}`}
-                    onClick={() => setActiveTab('ativos')}
-                >
-                    Contratos Ativos
-                </button>
-                <button
-                    className={`${styles.tabButton} ${activeTab === 'rescindidos' ? styles.tabButtonActive : ''}`}
-                    onClick={() => setActiveTab('rescindidos')}
-                >
-                    Contratos Rescindidos
-                </button>
-                <button
-                    className={`${styles.tabButton} ${activeTab === 'baixados' ? styles.tabButtonActive : ''}`}
-                    onClick={() => setActiveTab('baixados')}
-                >
-                    Imóveis Baixados
-                </button>
-                <button
-                    className={`${styles.tabButton} ${activeTab === 'angariados' ? styles.tabButtonActive : ''}`}
-                    onClick={() => setActiveTab('angariados')}
-                >
-                    Imóveis Angariados
-                </button>
-                <button
-                    className={`${styles.tabButton} ${activeTab === 'divulgados' ? styles.tabButtonActive : ''}`}
-                    onClick={() => setActiveTab('divulgados')}
-                >
-                    Imóveis Divulgados
-                </button>
+                {TABS.map(({ key, label }) => (
+                    <button
+                        key={key}
+                        className={`${styles.tabButton} ${activeTab === key ? styles.tabButtonActive : ''}`}
+                        onClick={() => selectTab(key)}
+                    >
+                        {label}
+                    </button>
+                ))}
             </div>
 
-            {activeTab === 'ativos' && <ActiveContracts options={options} />}
-            {activeTab === 'rescindidos' && <TerminatedContracts options={options} />}
-            {activeTab === 'baixados' && <RemovedProperties options={options} />}
-            {activeTab === 'angariados' && <ListedProperties options={options} />}
-            {activeTab === 'divulgados' && <AdvertisedProperties options={options} />}
+            <ActiveComponent options={options} />
         </div>
+    );
+}
+
+export default function Page() {
+    return (
+        <Suspense fallback={null}>
+            <PropertyPageContent />
+        </Suspense>
     );
 }

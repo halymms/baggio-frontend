@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import styles from './property.module.scss';
 import { usePropertyApi } from "@/services/usePropertyApi";
-import { buildLookup, COLORS_GUARANTEE, COLORS_TERMINATION, COLORS_TYPE, Filters, Options, sumValues } from "./_shared";
+import { buildLookup, COLORS_GUARANTEE, COLORS_TERMINATION, COLORS_TYPE, Filters, Options, sumValues, WrappedTick } from "./_shared";
 
 const now = new Date();
 
@@ -120,10 +120,10 @@ export function TerminatedContracts({ options }: { options: Options }) {
                                         value
                                     }))
                                     .sort((a, b) => b.value - a.value)}
-                                margin={{ top: 8, right: 16, left: 0, bottom: 80 }}
+                                margin={{ top: 8, right: 16, left: 0, bottom: 8 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" angle={-35} textAnchor="end" interval={0} tick={{ fontSize: 12 }} />
+                                <XAxis dataKey="name" interval={0} tick={<WrappedTick />} height={70} />
                                 <YAxis allowDecimals={false} />
                                 <Tooltip />
                                 <Bar dataKey="value" name="Contratos" radius={[4, 4, 0, 0]}>

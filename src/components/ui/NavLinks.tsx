@@ -4,6 +4,7 @@ import {
   UserGroupIcon,
   HomeIcon,
   ChartBarSquareIcon,
+  BuildingOfficeIcon,
   ChevronDownIcon,
   ChevronRightIcon
 } from '@heroicons/react/24/outline';
@@ -25,6 +26,11 @@ const baseLinks = [
       { name: 'Fluxo de Caixa', href: '/dashboard/financial/cash-flow' },
       { name: 'Inadimplência', href: '/dashboard/financial/inadimplencia' },
     ]
+  },
+  {
+    name: 'Imóveis',
+    href: '/dashboard/property',
+    icon: BuildingOfficeIcon,
   },
   { name: 'Usuários', href: '/dashboard/users', icon: UserGroupIcon, adminOnly: true },
 ];

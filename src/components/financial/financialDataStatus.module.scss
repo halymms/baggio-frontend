@@ -1,0 +1,17 @@
+.statusWrap {
+  margin: 1rem 0;
+}
+
+.loading {
+  color: #155dfc;
+  font-size: 0.95rem;
+}
+
+.error {
+  color: #e7000b;
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border-radius: 6px;
+  border: 1px solid #fecaca;
+}

@@ -5,7 +5,7 @@ import NavLinks from './NavLinks';
 import { PowerIcon } from '@heroicons/react/24/outline';
 import Image from 'next/image';
 import { Poppins } from 'next/font/google';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 const poppins = Poppins({
@@ -14,7 +14,7 @@ const poppins = Poppins({
 });
 
 export default function SideNav() {
-  const { logout } = useAuth() ?? {};
+  const { logout } = useAuth();
   const router = useRouter();
 
   const handleLogout = (e: React.FormEvent) => {

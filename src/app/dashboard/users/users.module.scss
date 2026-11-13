@@ -1,0 +1,221 @@
+.usersPageContainer {
+  .usersPageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .usersPageTitle {
+    font-size: 30px;
+    font-weight: 700;
+    color: #1e3a5f;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .usersPageSubtitle {
+    font-size: 1rem;
+    font-weight: 400;
+    color: #1e3a5f;
+    line-height: 1.5;
+    margin: 4px 0 0;
+  }
+
+  .primaryButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    background: #1e3a5f;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: Poppins, 'Poppins Fallback', sans-serif;
+    font-size: 14px;
+    text-decoration: none;
+
+    &:hover {
+      background: #16304f;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .secondaryButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    background: #fff;
+    color: #1e3a5f;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: Poppins, 'Poppins Fallback', sans-serif;
+    font-size: 14px;
+    text-decoration: none;
+
+    &:hover {
+      background: #f9fafb;
+    }
+  }
+
+  .card {
+    padding: 24px;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid #0000001a;
+  }
+
+  .statusWrap {
+    margin-bottom: 16px;
+  }
+
+  .loading {
+    color: #1e3a5f;
+    font-size: 14px;
+  }
+
+  .error {
+    color: #dc2626;
+    font-size: 14px;
+  }
+
+  .success {
+    color: #059669;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .emptyMessage {
+    color: #6b7280;
+    font-size: 14px;
+    text-align: center;
+    padding: 32px 16px;
+  }
+
+  .tableWrap {
+    overflow-x: auto;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+
+    th,
+    td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      font-weight: 600;
+      color: #1e3a5f;
+      background: #f9fafb;
+    }
+
+    td {
+      color: #374151;
+    }
+
+    tbody tr:hover {
+      background: #f9fafb;
+    }
+  }
+
+  .retryButton {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #1e3a5f;
+
+    &:hover {
+      background: #f3f4f6;
+    }
+  }
+}
+
+.accessDenied {
+  padding: 48px 24px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #0000001a;
+  border-radius: 8px;
+
+  .accessDeniedTitle {
+    font-size: 24px;
+    color: #1e3a5f;
+    margin: 0 0 8px;
+  }
+
+  .accessDeniedText {
+    color: #6b7280;
+    margin: 0;
+  }
+}
+
+.formPage {
+  max-width: 520px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.formLabel {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.formInput,
+.formSelect {
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #fff;
+  color: #111827;
+  font-family: Poppins, 'Poppins Fallback', sans-serif;
+
+  &:focus {
+    outline: none;
+    border-color: #1e3a5f;
+  }
+}
+
+.fieldError {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.formError {
+  color: #dc2626;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.formActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
